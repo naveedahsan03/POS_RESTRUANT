@@ -1,0 +1,124 @@
+@model List<StockLedger>
+@{
+    ViewData["Title"] = "Inventory & Stock Ledger";
+    var products = ViewBag.Products as List<ProductDto> ?? new List<ProductDto>();
+    var summary = ViewBag.StockSummary as List<ProductStockSummaryDto> ?? new List<ProductStockSummaryDto>();
+}
+<div class="row g-3 mb-3">
+    <!-- Stock Summary Table -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-bold"><i class="bi bi-boxes me-2"></i>Stock Reconciliation Summary (Opening / In / Out / Closing)</div>
+            <div class="card-body p-0" style="max-height: 42vh; overflow-y: auto;">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th class="text-end">Opening Stock</th>
+                            <th class="text-end text-success">+ Stock In</th>
+                            <th class="text-end text-danger">- Stock Out</th>
+                            <th class="text-end fw-bold">Closing Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in summary)
+                        {
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a asp-action="Index" asp-route-productId="@s.ProductId" class="text-decoration-none">@s.ProductName</a>
+                                </td>
+                                <td>@s.CategoryName</td>
+                                <td class="text-end">@s.OpeningStock.ToString("N2")</td>
+                                <td class="text-end text-success">+@s.StockIn.ToString("N2")</td>
+                                <td class="text-end text-danger">-@s.StockOut.ToString("N2")</td>
+                                <td class="text-end fw-bold">@s.ClosingStock.ToString("N2") @s.Unit</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Adjustment / Wastage Form -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white fw-bold">Stock Adjustment / Wastage</div>
+            <div class="card-body">
+                <form asp-action="AdjustStock" method="post">
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Product</label>
+                        <select name="ProductId" class="form-select form-select-sm" required>
+                            @foreach (var p in products)
+                            {
+                                <option value="@p.Id">@p.Name (Curr: @p.CurrentStock.ToString("N2") @p.Unit)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Movement Type</label>
+                            <select name="MovementType" class="form-select form-select-sm">
+                                <option value="6">Stock Adjustment (+/-)</option>
+                                <option value="7">Wastage (-)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Quantity Change</label>
+                            <input name="QuantityChange" type="number" step="0.01" class="form-control form-control-sm" placeholder="e.g. 10 or -5" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Reason *</label>
+                        <input name="Reason" class="form-control form-control-sm" placeholder="Physical audit count, kitchen wastage..." required />
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 fw-bold">Apply & Write to Stock Ledger</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Stock Movement Ledger -->
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-journal-text me-2"></i>Complete Stock Movement Ledger (Immutable Audit Trail)</h6>
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Show All Products</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-striped align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Timestamp (PKT)</th>
+                    <th>Business Date</th>
+                    <th>Product</th>
+                    <th>Movement Type</th>
+                    <th>Reference #</th>
+                    <th class="text-end">Opening</th>
+                    <th class="text-end text-success">Stock In</th>
+                    <th class="text-end text-danger">Stock Out</th>
+                    <th class="text-end fw-bold">Closing</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td class="small">@l.TransactionDateTime.ToString("dd MMM yyyy hh:mm tt")</td>
+                        <td><span class="badge bg-secondary">@l.BusinessDate.ToString("dd MMM yyyy")</span></td>
+                        <td class="fw-semibold">@l.Product?.Name</td>
+                        <td><span class="badge bg-info text-dark">@l.MovementType</span></td>
+                        <td><code>@l.ReferenceNumber</code></td>
+                        <td class="text-end">@l.OpeningStock.ToString("N2")</td>
+                        <td class="text-end text-success">@(l.QuantityIn > 0 ? $"+{l.QuantityIn:N2}" : "-")</td>
+                        <td class="text-end text-danger">@(l.QuantityOut > 0 ? $"-{l.QuantityOut:N2}" : "-")</td>
+                        <td class="text-end fw-bold">@l.ClosingStock.ToString("N2")</td>
+                        <td class="small text-muted">@l.Remarks</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

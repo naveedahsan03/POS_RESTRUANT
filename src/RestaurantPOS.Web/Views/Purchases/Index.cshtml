@@ -1,0 +1,171 @@
+@model List<Purchase>
+@{
+    ViewData["Title"] = "Purchases & Suppliers";
+    var suppliers = ViewBag.Suppliers as List<Supplier> ?? new List<Supplier>();
+    var products = ViewBag.Products as List<ProductDto> ?? new List<ProductDto>();
+    var returns = ViewBag.PurchaseReturns as List<PurchaseReturn> ?? new List<PurchaseReturn>();
+}
+<div class="row g-3">
+    <!-- New Purchase Form -->
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-cart-plus me-2"></i>Create Purchase Invoice</div>
+            <div class="card-body">
+                <form asp-action="CreatePurchase" method="post">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7">
+                            <label class="form-label small fw-semibold">Supplier</label>
+                            <select name="SupplierId" class="form-select form-select-sm" required>
+                                @foreach (var s in suppliers)
+                                {
+                                    <option value="@s.Id">@s.Name (Payable: Rs. @s.CurrentBalance.ToString("N0"))</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold">Payment Method</label>
+                            <select name="PaymentMethod" class="form-select form-select-sm">
+                                <option value="1">Cash</option>
+                                <option value="2">Card</option>
+                                <option value="3">Online / Bank</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-2">
+                        <table class="table table-sm table-bordered align-middle mb-0" id="purchaseItemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th style="width:90px;">Qty</th>
+                                    <th style="width:110px;">Unit Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < 4; i++)
+                                {
+                                    <tr>
+                                        <td>
+                                            <select name="Items[@i].ProductId" class="form-select form-select-sm">
+                                                <option value="0">-- Select Product --</option>
+                                                @foreach (var p in products)
+                                                {
+                                                    <option value="@p.Id">@p.Name (@p.Unit)</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td><input name="Items[@i].Quantity" type="number" step="0.01" value="0" class="form-control form-control-sm" /></td>
+                                        <td><input name="Items[@i].PurchasePrice" type="number" step="0.01" value="0" class="form-control form-control-sm" /></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Paid Amount (PKR)</label>
+                            <input name="PaidAmount" type="number" step="0.01" value="0" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Notes</label>
+                            <input name="Notes" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Save Purchase & Increase Stock</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Supplier Box -->
+        <div class="card">
+            <div class="card-header bg-white fw-bold">Add Supplier</div>
+            <div class="card-body">
+                <form asp-action="SaveSupplier" method="post" class="row g-2">
+                    <div class="col-md-6">
+                        <input name="Name" class="form-control form-control-sm" placeholder="Supplier Name *" required />
+                    </div>
+                    <div class="col-md-6">
+                        <input name="Phone" class="form-control form-control-sm" placeholder="Phone Number" />
+                    </div>
+                    <div class="col-md-8">
+                        <input name="Address" class="form-control form-control-sm" placeholder="Address" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-sm btn-outline-dark w-100">Add Supplier</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase History & Purchase Returns -->
+    <div class="col-lg-7">
+        <div class="card mb-3">
+            <div class="card-header bg-white fw-bold">Recent Purchases</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Business Date</th>
+                            <th>Supplier</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">Payable</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold">@p.PurchaseInvoiceNumber</td>
+                                <td>@p.BusinessDate.ToString("dd MMM yyyy")</td>
+                                <td>@p.Supplier?.Name</td>
+                                <td class="text-end">Rs. @p.TotalAmount.ToString("N2")</td>
+                                <td class="text-end text-success">Rs. @p.PaidAmount.ToString("N2")</td>
+                                <td class="text-end text-danger">Rs. @p.RemainingPayable.ToString("N2")</td>
+                                <td><span class="badge bg-secondary">@p.PaymentStatus</span></td>
+                                <td class="text-end">
+                                    <a asp-action="Return" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">Return</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white fw-bold text-danger">Purchase Returns History (@returns.Count)</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Return #</th>
+                            <th>Original Purchase</th>
+                            <th>Supplier</th>
+                            <th>Reason</th>
+                            <th class="text-end">Return Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in returns)
+                        {
+                            <tr>
+                                <td class="fw-bold">@r.ReturnNumber</td>
+                                <td>@r.Purchase?.PurchaseInvoiceNumber</td>
+                                <td>@r.Supplier?.Name</td>
+                                <td>@r.Reason</td>
+                                <td class="text-end fw-bold text-danger">Rs. @r.TotalReturnAmount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

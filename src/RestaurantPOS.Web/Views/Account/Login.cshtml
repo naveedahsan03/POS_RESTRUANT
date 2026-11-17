@@ -1,0 +1,40 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+<div class="row justify-content-center align-items-center" style="min-height: 82vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0 text-warning"><i class="bi bi-shop me-2"></i>Restaurant POS</h4>
+                <small class="text-light">Shift Window: 6:00 PM – Next Day 4:00 AM (PKT)</small>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Login" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        <input asp-for="Email" class="form-control" placeholder="admin@restaurant.pk" autofocus />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Password</label>
+                        <input asp-for="Password" class="form-control" placeholder="••••••••" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label">Keep me signed in for shift</label>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 fw-bold py-2">Sign In to POS</button>
+                </form>
+                <hr />
+                <div class="small text-muted">
+                    <strong>Default Seed Accounts:</strong><br />
+                    Admin: <code>admin@restaurant.pk</code> / <code>Admin@123</code><br />
+                    Cashier: <code>cashier@restaurant.pk</code> / <code>Cashier@123</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

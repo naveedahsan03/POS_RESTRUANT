@@ -1,0 +1,413 @@
+@{
+    ViewData["Title"] = "Touchscreen POS";
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+    var products = ViewBag.Products as List<ProductDto> ?? new List<ProductDto>();
+    var tables = ViewBag.Tables as List<RestaurantTable> ?? new List<RestaurantTable>();
+    var heldOrders = ViewBag.HeldOrders as List<Sale> ?? new List<Sale>();
+    var resumedOrder = ViewBag.ResumedOrder as SaleReceiptDto;
+}
+
+<div class="row g-3">
+    <!-- LEFT COLUMN: Category Tabs, Search & Touchscreen Product Grid -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header bg-white py-2">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-warning"><i class="bi bi-search"></i></span>
+                            <input type="text" id="posSearch" class="form-control" placeholder="Search item name or scan barcode..." autofocus />
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        @if (heldOrders.Any())
+                        {
+                            <div class="dropdown d-inline">
+                                <button class="btn btn-sm btn-outline-warning dropdown-toggle fw-bold" data-bs-toggle="dropdown">
+                                    <i class="bi bi-pause-circle me-1"></i>Held Orders (@heldOrders.Count)
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    @foreach (var h in heldOrders)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item small" asp-action="Index" asp-route-resumeSaleId="@h.Id">
+                                                <strong>@h.InvoiceNumber</strong> (@h.OrderType @(h.RestaurantTable != null ? $"[{h.RestaurantTable.TableNumber}]" : "")) - Rs. @h.TotalAmount.ToString("N0")
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Category Filter Buttons -->
+                <div class="d-flex flex-wrap gap-1 mt-2" id="categoryButtons">
+                    <button type="button" class="btn btn-sm btn-dark cat-filter active" data-cat="0">All Items</button>
+                    @foreach (var cat in categories)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-dark cat-filter" data-cat="@cat.Id">@cat.Name</button>
+                    }
+                </div>
+            </div>
+
+            <div class="card-body" style="max-height: 72vh; overflow-y: auto;">
+                <div class="row g-2" id="productGrid">
+                    @foreach (var p in products)
+                    {
+                        <div class="col-xl-3 col-md-4 col-6 product-tile"
+                             data-cat="@p.CategoryId"
+                             data-name="@p.Name.ToLower()"
+                             data-barcode="@(p.Barcode?.ToLower() ?? "")">
+                            <div class="card pos-product-btn border h-100 p-2 d-flex flex-column justify-content-between @(p.IsLowStock ? "border-warning" : "border-secondary-subtle")"
+                                 onclick="addToCart(@p.Id, '@Html.Raw(p.Name.Replace("'", "\\'"))', @p.SalePrice, @p.CurrentStock)">
+                                <div>
+                                    <div class="fw-bold small text-dark lh-sm">@p.Name</div>
+                                    <span class="badge bg-light text-secondary border mt-1" style="font-size:0.7rem;">Stock: @p.CurrentStock.ToString("N0") @p.Unit</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="fw-bold text-primary">Rs. @p.SalePrice.ToString("N0")</span>
+                                    <i class="bi bi-plus-circle-fill text-success fs-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Order Cart, Totals & Payment -->
+    <div class="col-lg-5">
+        <div class="card h-100 border-top border-4 border-warning">
+            <div class="card-header bg-white py-2">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <label class="form-label small mb-0 fw-semibold">Order Type</label>
+                        <select id="orderType" class="form-select form-select-sm" onchange="toggleOrderTypeFields()">
+                            <option value="1">Dine In</option>
+                            <option value="2">Takeaway</option>
+                            <option value="3">Delivery</option>
+                        </select>
+                    </div>
+                    <div class="col-4" id="tableSelectWrap">
+                        <label class="form-label small mb-0 fw-semibold">Table</label>
+                        <select id="restaurantTableId" class="form-select form-select-sm">
+                            <option value="">-- Select Table --</option>
+                            @foreach (var t in tables)
+                            {
+                                <option value="@t.Id">@t.TableNumber (@t.Status)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small mb-0 fw-semibold">Customer Name</label>
+                        <input type="text" id="customerName" class="form-control form-control-sm" value="Walk-In Customer" />
+                    </div>
+                    <div class="col-6 d-none" id="deliveryPhoneWrap">
+                        <input type="text" id="customerPhone" class="form-control form-control-sm" placeholder="Customer Phone..." />
+                    </div>
+                    <div class="col-6 d-none" id="deliveryAddrWrap">
+                        <input type="text" id="deliveryAddress" class="form-control form-control-sm" placeholder="Delivery Address..." />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Table -->
+            <div class="card-body p-0" style="max-height: 36vh; overflow-y: auto;">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-center" style="width:115px;">Qty</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartBody">
+                        <tr><td colspan="5" class="text-center text-muted py-4">Tap products on the left to add to order</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Financial Totals & Payment Controls -->
+            <div class="card-footer bg-white">
+                <div class="row g-2 mb-2">
+                    <div class="col-4">
+                        <label class="small text-muted">Subtotal</label>
+                        <input type="text" id="subTotalDisplay" class="form-control form-control-sm fw-bold bg-light" value="0.00" readonly />
+                    </div>
+                    <div class="col-4">
+                        <label class="small text-muted">Discount (PKR)</label>
+                        <input type="number" id="discountInput" class="form-control form-control-sm" value="0" min="0" oninput="recalcTotals()" />
+                    </div>
+                    <div class="col-4">
+                        <label class="small text-muted">Tax (%)</label>
+                        <input type="number" id="taxPctInput" class="form-control form-control-sm" value="0" min="0" max="100" oninput="recalcTotals()" />
+                    </div>
+                </div>
+
+                <div class="p-2 rounded bg-dark text-white d-flex justify-content-between align-items-center mb-2">
+                    <span class="fs-6 fw-semibold">GRAND TOTAL</span>
+                    <span class="fs-3 fw-bold text-warning" id="grandTotalDisplay">Rs. 0.00</span>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-4">
+                        <label class="small fw-semibold">Payment Method</label>
+                        <select id="paymentMethod" class="form-select form-select-sm" onchange="toggleSplitPayment()">
+                            <option value="1">Cash</option>
+                            <option value="2">Card</option>
+                            <option value="3">Online</option>
+                            <option value="4">Split Payment</option>
+                        </select>
+                    </div>
+                    <div class="col-4" id="singleReceivedWrap">
+                        <label class="small fw-semibold">Received (PKR)</label>
+                        <input type="number" id="receivedAmount" class="form-control form-control-sm fw-bold" value="0" oninput="recalcTotals()" />
+                    </div>
+                    <div class="col-4">
+                        <label class="small fw-semibold">Change Return</label>
+                        <input type="text" id="changeDisplay" class="form-control form-control-sm fw-bold text-success bg-light" value="0.00" readonly />
+                    </div>
+                </div>
+
+                <!-- Split Payment Breakdown Box -->
+                <div class="row g-2 mb-2 d-none border rounded p-2 bg-light" id="splitPaymentBox">
+                    <div class="col-4">
+                        <label class="small">Cash (PKR)</label>
+                        <input type="number" id="splitCash" class="form-control form-control-sm" value="0" oninput="recalcTotals()" />
+                    </div>
+                    <div class="col-4">
+                        <label class="small">Card (PKR)</label>
+                        <input type="number" id="splitCard" class="form-control form-control-sm" value="0" oninput="recalcTotals()" />
+                    </div>
+                    <div class="col-4">
+                        <label class="small">Online (PKR)</label>
+                        <input type="number" id="splitOnline" class="form-control form-control-sm" value="0" oninput="recalcTotals()" />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-2">
+                    <button type="button" id="btnCompletePrint" class="btn btn-success flex-grow-1 fw-bold py-2" onclick="submitPosOrder(false)">
+                        <i class="bi bi-printer-fill me-1"></i>Pay & Print Receipt
+                    </button>
+                    <button type="button" id="btnHoldOrder" class="btn btn-warning fw-bold" onclick="submitPosOrder(true)">
+                        <i class="bi bi-pause-fill me-1"></i>Hold
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="clearCart()">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let cart = [];
+    let resumedSaleId = @(resumedOrder != null ? resumedOrder.SaleId : "null");
+    let clientRequestToken = crypto.randomUUID ? crypto.randomUUID() : ('REQ-' + Date.now() + '-' + Math.random());
+
+    @if (resumedOrder != null)
+    {
+        <text>
+        cart = [
+            @foreach (var item in resumedOrder.Items)
+            {
+                @:{ productId: @item.ProductId, name: '@Html.Raw(item.ProductName.Replace("'", "\\'"))', price: @item.UnitPrice, quantity: @item.Quantity },
+            }
+        ];
+        $(function() {
+            $('#orderType').val('@((int)resumedOrder.OrderType)');
+            $('#discountInput').val('@resumedOrder.DiscountAmount');
+            $('#taxPctInput').val('@resumedOrder.TaxPercentage');
+            toggleOrderTypeFields();
+            renderCart();
+        });
+        </text>
+    }
+
+    function addToCart(productId, name, price, stock) {
+        const existing = cart.find(i => i.productId === productId);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ productId, name, price: parseFloat(price), quantity: 1 });
+        }
+        renderCart();
+    }
+
+    function updateQty(productId, delta) {
+        const item = cart.find(i => i.productId === productId);
+        if (!item) return;
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            cart = cart.filter(i => i.productId !== productId);
+        }
+        renderCart();
+    }
+
+    function removeItem(productId) {
+        cart = cart.filter(i => i.productId !== productId);
+        renderCart();
+    }
+
+    function clearCart() {
+        cart = [];
+        resumedSaleId = null;
+        clientRequestToken = 'REQ-' + Date.now() + '-' + Math.random();
+        $('#discountInput').val(0);
+        $('#receivedAmount').val(0);
+        renderCart();
+    }
+
+    function renderCart() {
+        const tbody = $('#cartBody');
+        tbody.empty();
+        if (cart.length === 0) {
+            tbody.append('<tr><td colspan="5" class="text-center text-muted py-4">Tap products on the left to add to order</td></tr>');
+            recalcTotals();
+            return;
+        }
+
+        cart.forEach(item => {
+            const lineTotal = (item.quantity * item.price).toFixed(2);
+            tbody.append(`
+                <tr>
+                    <td class="fw-semibold small">${item.name}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary px-2" onclick="updateQty(${item.productId}, -1)">-</button>
+                            <span class="btn btn-light disabled fw-bold px-2">${item.quantity}</span>
+                            <button type="button" class="btn btn-outline-secondary px-2" onclick="updateQty(${item.productId}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td class="text-end small">${item.price.toFixed(0)}</td>
+                    <td class="text-end fw-bold small">${lineTotal}</td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm text-danger p-0" onclick="removeItem(${item.productId})"><i class="bi bi-x-circle"></i></button>
+                    </td>
+                </tr>
+            `);
+        });
+        recalcTotals();
+    }
+
+    function recalcTotals() {
+        const subTotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+        const discount = Math.min(subTotal, Math.max(0, parseFloat($('#discountInput').val()) || 0));
+        const taxPct = Math.max(0, parseFloat($('#taxPctInput').val()) || 0);
+        const taxable = subTotal - discount;
+        const taxAmt = Math.round(taxable * (taxPct / 100) * 100) / 100;
+        const grandTotal = Math.round((taxable + taxAmt) * 100) / 100;
+
+        $('#subTotalDisplay').val(subTotal.toFixed(2));
+        $('#grandTotalDisplay').text('Rs. ' + grandTotal.toFixed(2));
+
+        const payMethod = parseInt($('#paymentMethod').val());
+        let received = 0;
+        if (payMethod === 4) {
+            received = (parseFloat($('#splitCash').val()) || 0) +
+                       (parseFloat($('#splitCard').val()) || 0) +
+                       (parseFloat($('#splitOnline').val()) || 0);
+        } else {
+            received = parseFloat($('#receivedAmount').val()) || 0;
+        }
+
+        const change = Math.max(0, received - grandTotal);
+        $('#changeDisplay').val(change.toFixed(2));
+    }
+
+    function toggleOrderTypeFields() {
+        const type = parseInt($('#orderType').val());
+        $('#tableSelectWrap').toggleClass('d-none', type !== 1);
+        $('#deliveryPhoneWrap, #deliveryAddrWrap').toggleClass('d-none', type !== 3);
+    }
+
+    function toggleSplitPayment() {
+        const payMethod = parseInt($('#paymentMethod').val());
+        $('#splitPaymentBox').toggleClass('d-none', payMethod !== 4);
+        $('#singleReceivedWrap').toggleClass('d-none', payMethod === 4);
+        recalcTotals();
+    }
+
+    function submitPosOrder(isHold) {
+        if (cart.length === 0) {
+            alert('Please add at least one product to the cart.');
+            return;
+        }
+
+        const payMethod = parseInt($('#paymentMethod').val());
+        const splitPayments = [];
+        if (payMethod === 4 && !isHold) {
+            const c = parseFloat($('#splitCash').val()) || 0;
+            const d = parseFloat($('#splitCard').val()) || 0;
+            const o = parseFloat($('#splitOnline').val()) || 0;
+            if (c > 0) splitPayments.push({ paymentMethod: 1, amount: c });
+            if (d > 0) splitPayments.push({ paymentMethod: 2, amount: d });
+            if (o > 0) splitPayments.push({ paymentMethod: 3, amount: o });
+        }
+
+        const payload = {
+            resumedSaleId: resumedSaleId,
+            clientRequestToken: clientRequestToken,
+            orderType: parseInt($('#orderType').val()),
+            restaurantTableId: $('#restaurantTableId').val() ? parseInt($('#restaurantTableId').val()) : null,
+            customerName: $('#customerName').val(),
+            customerPhone: $('#customerPhone').val(),
+            deliveryAddress: $('#deliveryAddress').val(),
+            discountAmount: parseFloat($('#discountInput').val()) || 0,
+            taxPercentage: parseFloat($('#taxPctInput').val()) || 0,
+            paymentMethod: payMethod,
+            receivedAmount: parseFloat($('#receivedAmount').val()) || 0,
+            isHoldOrder: isHold,
+            items: cart.map(i => ({ productId: i.productId, quantity: i.quantity, discountAmount: 0 })),
+            splitPayments: splitPayments
+        };
+
+        $('#btnCompletePrint, #btnHoldOrder').prop('disabled', true);
+
+        $.ajax({
+            url: '@Url.Action("SubmitOrder", "Pos")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function(res) {
+                if (res.isHeld) {
+                    window.location.href = '@Url.Action("Index", "Pos")';
+                } else {
+                    window.location.href = res.receiptUrl;
+                }
+            },
+            error: function(xhr) {
+                $('#btnCompletePrint, #btnHoldOrder').prop('disabled', false);
+                const msg = xhr.responseJSON?.message || 'Error saving sale.';
+                alert(msg);
+            }
+        });
+    }
+
+    // Category & Search Filtering
+    $('.cat-filter').on('click', function() {
+        $('.cat-filter').removeClass('active btn-dark').addClass('btn-outline-dark');
+        $(this).removeClass('btn-outline-dark').addClass('active btn-dark');
+        const catId = parseInt($(this).data('cat'));
+        $('.product-tile').each(function() {
+            const match = catId === 0 || parseInt($(this).data('cat')) === catId;
+            $(this).toggle(match);
+        });
+    });
+
+    $('#posSearch').on('input', function() {
+        const q = $(this).val().toLowerCase().trim();
+        $('.product-tile').each(function() {
+            const name = $(this).data('name') || '';
+            const barcode = $(this).data('barcode') || '';
+            $(this).toggle(name.includes(q) || barcode.includes(q));
+        });
+    });
+</script>
+}

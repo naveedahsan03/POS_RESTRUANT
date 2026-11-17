@@ -1,0 +1,15 @@
+
+# Visual Studio
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.cache
+
+# Visual Studio Code
+.vscode/
+
+# Temporary files
+*.tmp
+*.log

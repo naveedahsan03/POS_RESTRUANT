@@ -1,0 +1,131 @@
+@model CashRegister?
+@{
+    ViewData["Title"] = "Cash Register & Shift Closing";
+    var currentBDate = (DateTime)ViewBag.CurrentBusinessDate;
+    var winStart = (DateTime)ViewBag.WindowStart;
+    var winEnd = (DateTime)ViewBag.WindowEnd;
+    var history = ViewBag.History as List<CashRegister> ?? new List<CashRegister>();
+}
+<div class="row g-3">
+    <div class="col-lg-5">
+        @if (Model == null)
+        {
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    Open Cash Register for Business Date: @currentBDate.ToString("dd MMM yyyy")
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        Shift Window: <strong>@winStart.ToString("dd MMM hh:mm tt")</strong> to <strong>@winEnd.ToString("dd MMM hh:mm tt")</strong>
+                    </p>
+                    <form asp-action="Open" method="post">
+                        <input type="hidden" name="BusinessDate" value="@currentBDate.ToString("yyyy-MM-dd")" />
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Opening Cash Float (PKR)</label>
+                            <input name="OpeningCash" type="number" step="0.01" value="5000" class="form-control form-control-lg fw-bold" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Open Register for Shift</button>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card @(Model.IsClosed ? "border-secondary" : "border-success")">
+                <div class="card-header @(Model.IsClosed ? "bg-secondary" : "bg-success") text-white d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Business Date: @Model.BusinessDate.ToString("dd MMM yyyy")</span>
+                    <span class="badge bg-light text-dark">@(Model.IsClosed ? "CLOSED" : "OPEN SHIFT")</span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Opening Cash:</span>
+                            <strong>Rs. @Model.OpeningCash.ToString("N2")</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between text-success">
+                            <span>+ Cash Sales Received:</span>
+                            <strong>Rs. @Model.CashSales.ToString("N2")</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between text-danger">
+                            <span>- Cash Expenses:</span>
+                            <strong>Rs. @Model.CashExpenses.ToString("N2")</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between text-danger">
+                            <span>- Cash Refunds (Sales Returns):</span>
+                            <strong>Rs. @Model.CashRefunds.ToString("N2")</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between bg-light fs-5 fw-bold">
+                            <span>Expected Closing Cash:</span>
+                            <span class="text-primary">Rs. @Model.ExpectedClosingCash.ToString("N2")</span>
+                        </li>
+                    </ul>
+
+                    @if (!Model.IsClosed)
+                    {
+                        <form asp-action="Close" method="post" onsubmit="return confirm('Close cash register and finalize Business Day?');">
+                            <input type="hidden" name="CashRegisterId" value="@Model.Id" />
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold">Actual Physical Cash in Drawer (PKR) *</label>
+                                <input name="ActualClosingCash" type="number" step="0.01" value="@Model.ExpectedClosingCash" class="form-control fw-bold" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Closing Notes</label>
+                                <input name="ClosingNotes" class="form-control form-control-sm" placeholder="Handed over to owner / safe drop..." />
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100 fw-bold py-2">
+                                <i class="bi bi-lock-fill me-1"></i>Close Cash Register & Business Day
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-secondary mb-0">
+                            <div>Actual Closing Cash: <strong>Rs. @(Model.ActualClosingCash?.ToString("N2"))</strong></div>
+                            <div>Cash Difference: <strong class="@(Model.CashDifference < 0 ? "text-danger" : "text-success")">Rs. @(Model.CashDifference?.ToString("N2"))</strong></div>
+                            <div class="small text-muted mt-1">Closed at: @Model.ClosedAt?.ToString("dd MMM yyyy hh:mm tt")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-bold">Cash Register Closing History</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Business Date</th>
+                            <th class="text-end">Opening</th>
+                            <th class="text-end">Cash Sales</th>
+                            <th class="text-end">Cash Exp/Ref</th>
+                            <th class="text-end">Expected</th>
+                            <th class="text-end">Actual</th>
+                            <th class="text-end">Difference</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var h in history)
+                        {
+                            <tr>
+                                <td class="fw-bold">@h.BusinessDate.ToString("dd MMM yyyy")</td>
+                                <td class="text-end">@h.OpeningCash.ToString("N0")</td>
+                                <td class="text-end text-success">@h.CashSales.ToString("N0")</td>
+                                <td class="text-end text-danger">@((h.CashExpenses + h.CashRefunds).ToString("N0"))</td>
+                                <td class="text-end fw-bold">@h.ExpectedClosingCash.ToString("N0")</td>
+                                <td class="text-end">@(h.ActualClosingCash?.ToString("N0") ?? "-")</td>
+                                <td class="text-end fw-bold @(h.CashDifference < 0 ? "text-danger" : "text-success")">@(h.CashDifference?.ToString("N0") ?? "-")</td>
+                                <td>
+                                    <span class="badge @(h.IsClosed ? "bg-secondary" : "bg-success")">@(h.IsClosed ? "Closed" : "Open")</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

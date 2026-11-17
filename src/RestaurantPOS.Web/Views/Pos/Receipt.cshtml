@@ -1,0 +1,89 @@
+@model SaleReceiptDto
+@{
+    ViewData["Title"] = $"Receipt {Model.InvoiceNumber}";
+}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card p-3" style="font-family: 'Courier New', Courier, monospace;">
+            <div class="text-center border-bottom pb-2 mb-2">
+                <h5 class="fw-bold mb-0">SPICENIGHT RESTAURANT</h5>
+                <div class="small">Main Food Street, Karachi</div>
+                <div class="small">Invoice: <strong>@Model.InvoiceNumber</strong></div>
+                <div class="small">Business Date: <strong>@Model.BusinessDate.ToString("dd-MMM-yyyy")</strong></div>
+                <div class="small">Date/Time: @Model.SaleDateTime.ToString("dd-MMM-yyyy hh:mm:ss tt")</div>
+                <div class="small">Type: <strong>@Model.OrderType</strong> @(Model.TableNumber != null ? $"| Table: {Model.TableNumber}" : "")</div>
+                <div class="small">Cashier: @Model.CashierName</div>
+            </div>
+
+            <table class="table table-sm table-borderless small mb-2">
+                <thead class="border-bottom">
+                    <tr>
+                        <th>Item</th>
+                        <th class="text-center">Qty</th>
+                        <th class="text-end">Rate</th>
+                        <th class="text-end">Amt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@item.ProductName</td>
+                            <td class="text-center">@item.Quantity.ToString("N0")</td>
+                            <td class="text-end">@item.UnitPrice.ToString("N0")</td>
+                            <td class="text-end">@item.LineTotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="border-top pt-2 small">
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <span>Rs. @Model.SubTotal.ToString("N2")</span>
+                </div>
+                @if (Model.DiscountAmount > 0)
+                {
+                    <div class="d-flex justify-content-between">
+                        <span>Discount:</span>
+                        <span>- Rs. @Model.DiscountAmount.ToString("N2")</span>
+                    </div>
+                }
+                @if (Model.TaxAmount > 0)
+                {
+                    <div class="d-flex justify-content-between">
+                        <span>Tax (@Model.TaxPercentage%):</span>
+                        <span>Rs. @Model.TaxAmount.ToString("N2")</span>
+                    </div>
+                }
+                <div class="d-flex justify-content-between fw-bold fs-6 border-top border-bottom py-1 my-1">
+                    <span>GRAND TOTAL:</span>
+                    <span>Rs. @Model.TotalAmount.ToString("N2")</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Payment Method:</span>
+                    <span>@Model.PaymentMethod</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Received:</span>
+                    <span>Rs. @Model.ReceivedAmount.ToString("N2")</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Change Return:</span>
+                    <span>Rs. @Model.ChangeAmount.ToString("N2")</span>
+                </div>
+            </div>
+
+            <div class="text-center small mt-3 pt-2 border-top">
+                Thank you for dining with us!
+            </div>
+
+            <div class="d-flex gap-2 mt-3 no-print">
+                <button type="button" class="btn btn-primary w-100" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Print Receipt
+                </button>
+                <a asp-action="Index" class="btn btn-warning w-100 fw-bold">New Sale</a>
+            </div>
+        </div>
+    </div>
+</div>

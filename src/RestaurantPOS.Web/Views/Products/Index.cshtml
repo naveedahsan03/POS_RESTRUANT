@@ -1,0 +1,118 @@
+@model List<ProductDto>
+@{
+    ViewData["Title"] = "Products & Categories";
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+}
+<div class="row g-3">
+    <div class="col-lg-9">
+        <div class="card">
+            <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2"></i>Products Catalog</h5>
+                <a asp-action="Create" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New Product</a>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <input name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Search by name or barcode..." />
+                    </div>
+                    <div class="col-md-3">
+                        <select name="categoryId" class="form-select form-select-sm">
+                            <option value="">All Categories</option>
+                            @foreach (var c in categories)
+                            {
+                                <option value="@c.Id" selected="@(ViewBag.CategoryId != null && (int)ViewBag.CategoryId == c.Id)">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-center">
+                        <div class="form-check">
+                            <input type="checkbox" name="lowStockOnly" value="true" class="form-check-input" id="lowStockChk" checked="@(ViewBag.LowStockOnly == true)" />
+                            <label class="form-check-label small" for="lowStockChk">Low Stock Only</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-sm btn-secondary w-100">Filter</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Barcode</th>
+                                <th class="text-end">Purchase Price</th>
+                                <th class="text-end">Sale Price</th>
+                                <th class="text-end">Current Stock</th>
+                                <th class="text-end">Min Stock</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model)
+                            {
+                                <tr class="@(p.IsLowStock ? "table-warning" : "")">
+                                    <td class="fw-semibold">@p.Name</td>
+                                    <td>@p.CategoryName</td>
+                                    <td><code>@p.Barcode</code></td>
+                                    <td class="text-end">Rs. @p.PurchasePrice.ToString("N2")</td>
+                                    <td class="text-end fw-bold">Rs. @p.SalePrice.ToString("N2")</td>
+                                    <td class="text-end">
+                                        <span class="badge @(p.IsLowStock ? "bg-danger" : "bg-success")">
+                                            @p.CurrentStock.ToString("N2") @p.Unit
+                                        </span>
+                                    </td>
+                                    <td class="text-end">@p.MinimumStock.ToString("N2")</td>
+                                    <td>
+                                        <span class="badge @(p.IsActive ? "bg-primary" : "bg-secondary")">@(p.IsActive ? "Active" : "Inactive")</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                        <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline" onsubmit="return confirm('Soft-delete this product?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Management Sidebar -->
+    <div class="col-lg-3">
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white fw-bold">Add / Update Category</div>
+            <div class="card-body">
+                <form asp-action="SaveCategory" method="post">
+                    <div class="mb-2">
+                        <label class="form-label small">Category Name</label>
+                        <input name="Name" class="form-control form-control-sm" required />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Display Order</label>
+                        <input name="DisplayOrder" type="number" value="1" class="form-control form-control-sm" />
+                    </div>
+                    <input type="hidden" name="IsActive" value="true" />
+                    <button type="submit" class="btn btn-sm btn-warning w-100 fw-bold">Save Category</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header bg-white fw-bold">Categories (@categories.Count)</div>
+            <ul class="list-group list-group-flush small">
+                @foreach (var c in categories)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>@c.Name</span>
+                        <span class="badge bg-secondary">#@c.DisplayOrder</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

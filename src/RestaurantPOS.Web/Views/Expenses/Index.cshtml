@@ -1,0 +1,100 @@
+@model List<Expense>
+@{
+    ViewData["Title"] = "Daily Expenses";
+    var categories = ViewBag.Categories as List<ExpenseCategory> ?? new List<ExpenseCategory>();
+    var startBDate = (DateTime)(ViewBag.StartBusinessDate ?? DateTime.Today);
+    var endBDate = (DateTime)(ViewBag.EndBusinessDate ?? DateTime.Today);
+}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-wallet2 me-2"></i>Record Daily Expense</div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Expense Category</label>
+                        <select name="ExpenseCategoryId" class="form-select form-select-sm" required>
+                            @foreach (var c in categories)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Expense Title *</label>
+                        <input name="Title" class="form-control form-control-sm" placeholder="e.g. Fresh Coriander & Mint, Generator Fuel" required />
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Amount (PKR) *</label>
+                            <input name="Amount" type="number" step="0.01" min="1" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Payment Method</label>
+                            <select name="PaymentMethod" class="form-select form-select-sm">
+                                <option value="1">Cash (From Register)</option>
+                                <option value="3">Online / Bank</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description / Notes</label>
+                        <textarea name="Description" rows="2" class="form-control form-control-sm"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100 fw-bold">Save Expense (Auto-Assign Business Date)</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white fw-bold">Add Expense Category</div>
+            <div class="card-body">
+                <form asp-action="SaveCategory" method="post" class="d-flex gap-2">
+                    <input name="Name" class="form-control form-control-sm" placeholder="New Category Name..." required />
+                    <button type="submit" class="btn btn-sm btn-outline-dark">Add</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Expenses Ledger (Total: Rs. @Model.Sum(x => x.Amount).ToString("N2"))</h5>
+                <form method="get" class="d-flex gap-2 align-items-center">
+                    <input type="date" name="startBusinessDate" value="@startBDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                    <span>to</span>
+                    <input type="date" name="endBusinessDate" value="@endBDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                    <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Business Date</th>
+                            <th>Exact Timestamp</th>
+                            <th>Category</th>
+                            <th>Title</th>
+                            <th>Payment</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in Model)
+                        {
+                            <tr>
+                                <td><span class="badge bg-dark">@e.BusinessDate.ToString("dd MMM yyyy")</span></td>
+                                <td class="small">@e.ExpenseDateTime.ToString("dd MMM hh:mm tt")</td>
+                                <td>@e.ExpenseCategory?.Name</td>
+                                <td class="fw-semibold">@e.Title <small class="text-muted">@e.Description</small></td>
+                                <td>@e.PaymentMethod</td>
+                                <td class="text-end fw-bold text-danger">Rs. @e.Amount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

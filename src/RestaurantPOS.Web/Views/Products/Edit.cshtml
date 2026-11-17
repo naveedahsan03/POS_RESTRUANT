@@ -1,0 +1,96 @@
+@model ProductDto
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Add Product" : "Edit Product";
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-dark text-white fw-bold">@ViewData["Title"]</div>
+            <div class="card-body">
+                <form asp-action="Save" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Product Name</label>
+                            <input asp-for="Name" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Category</label>
+                            <select asp-for="CategoryId" class="form-select" required>
+                                @foreach (var c in categories)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Purchase Cost (PKR)</label>
+                            <input asp-for="PurchasePrice" type="number" step="0.01" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Selling Price (PKR)</label>
+                            <input asp-for="SalePrice" type="number" step="0.01" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Unit</label>
+                            <select asp-for="Unit" class="form-select">
+                                <option value="Piece">Piece</option>
+                                <option value="Plate">Plate</option>
+                                <option value="KG">KG</option>
+                                <option value="Liter">Liter</option>
+                                <option value="Portion">Portion</option>
+                            </select>
+                        </div>
+
+                        @if (Model.Id == 0)
+                        {
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Opening Stock</label>
+                                <input asp-for="CurrentStock" type="number" step="0.01" class="form-control" />
+                                <small class="text-muted">Creates OpeningStock ledger entry</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Current Stock (Read-Only)</label>
+                                <input asp-for="CurrentStock" class="form-control bg-light" readonly />
+                                <small class="text-muted">Use Stock Ledger to adjust stock</small>
+                            </div>
+                        }
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Minimum Stock Alert</label>
+                            <input asp-for="MinimumStock" type="number" step="0.01" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Barcode / SKU (Optional)</label>
+                            <input asp-for="Barcode" class="form-control" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input asp-for="IsActive" class="form-check-input" />
+                                <label asp-for="IsActive" class="form-check-label">Product is Active on POS</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input asp-for="AllowNegativeStock" class="form-check-input" />
+                                <label asp-for="AllowNegativeStock" class="form-check-label">Allow Negative Stock (Made-to-Order)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Save Product</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
