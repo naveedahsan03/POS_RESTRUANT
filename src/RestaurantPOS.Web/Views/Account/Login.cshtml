@@ -1,40 +1,101 @@
 @model LoginViewModel
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Sign In";
 }
-<div class="row justify-content-center align-items-center" style="min-height: 82vh;">
-    <div class="col-md-5 col-lg-4">
-        <div class="card shadow border-0">
-            <div class="card-header bg-dark text-white text-center py-3">
-                <h4 class="mb-0 text-warning"><i class="bi bi-shop me-2"></i>Restaurant POS</h4>
-                <small class="text-light">Shift Window: 6:00 PM – Next Day 4:00 AM (PKT)</small>
-            </div>
-            <div class="card-body p-4">
-                <form asp-action="Login" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Email Address</label>
-                        <input asp-for="Email" class="form-control" placeholder="admin@restaurant.pk" autofocus />
-                        <span asp-validation-for="Email" class="text-danger small"></span>
+<div class="row justify-content-center align-items-center" style="min-height: 88vh;">
+    <div class="col-xl-8 col-lg-9">
+        <div class="card border-0 shadow-lg overflow-hidden" style="border-radius: 20px;">
+            <div class="row g-0">
+                <!-- Left Brand Showcase Panel -->
+                <div class="col-md-5 d-none d-md-flex flex-column justify-content-between p-4 text-white"
+                     style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 60%, #ea580c 100%);">
+                    <div>
+                        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-10 mb-4">
+                            <i class="bi bi-fire text-warning"></i>
+                            <span class="small fw-bold">SpiceNight POS v2.0</span>
+                        </div>
+                        <h3 class="fw-extrabold mb-2">Fast Night-Shift Restaurant POS</h3>
+                        <p class="text-white-50 small">
+                            Built for 6:00 PM to Next-Day 4:00 AM operations with real-time Stock Ledger, Cash Register & Daily Business Reports.
+                        </p>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Password</label>
-                        <input asp-for="Password" class="form-control" placeholder="••••••••" />
-                        <span asp-validation-for="Password" class="text-danger small"></span>
+
+                    <div class="bg-dark bg-opacity-50 rounded-4 p-3 border border-white border-opacity-10">
+                        <div class="small fw-bold text-warning mb-2"><i class="bi bi-lightning-charge-fill me-1"></i>1-Click Quick Demo Login</div>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-light text-start d-flex justify-content-between align-items-center"
+                                    onclick="fillCredentials('admin@restaurant.pk', 'Admin@123')">
+                                <span><i class="bi bi-shield-check text-warning me-1"></i>Admin Account</span>
+                                <span class="badge bg-warning text-dark">Full Access</span>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-light text-start d-flex justify-content-between align-items-center"
+                                    onclick="fillCredentials('cashier@restaurant.pk', 'Cashier@123')">
+                                <span><i class="bi bi-pc-display text-info me-1"></i>Cashier Account</span>
+                                <span class="badge bg-info text-dark">POS Shift</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="form-check mb-3">
-                        <input asp-for="RememberMe" class="form-check-input" />
-                        <label asp-for="RememberMe" class="form-check-label">Keep me signed in for shift</label>
+                </div>
+
+                <!-- Right Login Form Panel -->
+                <div class="col-md-7 bg-white p-4 p-lg-5">
+                    <div class="mb-4">
+                        <h4 class="fw-bold text-dark mb-1">Welcome Back</h4>
+                        <p class="text-muted small mb-0">Sign in to start your restaurant shift</p>
                     </div>
-                    <button type="submit" class="btn btn-warning w-100 fw-bold py-2">Sign In to POS</button>
-                </form>
-                <hr />
-                <div class="small text-muted">
-                    <strong>Default Seed Accounts:</strong><br />
-                    Admin: <code>admin@restaurant.pk</code> / <code>Admin@123</code><br />
-                    Cashier: <code>cashier@restaurant.pk</code> / <code>Cashier@123</code>
+
+                    <form asp-action="Login" method="post" id="loginForm">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">EMAIL ADDRESS</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                                <input asp-for="Email" id="emailInput" class="form-control border-start-0 ps-0" placeholder="admin@restaurant.pk" autofocus />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary">PASSWORD</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-key text-muted"></i></span>
+                                <input asp-for="Password" id="passwordInput" class="form-control border-start-0 ps-0" placeholder="••••••••" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input asp-for="RememberMe" class="form-check-input" />
+                                <label asp-for="RememberMe" class="form-check-label small text-muted">Keep me signed in for 14h shift</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100 py-2 fw-bold fs-6 shadow-sm">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Sign In to Terminal
+                        </button>
+                    </form>
+
+                    <div class="mt-4 pt-3 border-top d-md-none">
+                        <div class="small text-muted mb-2 fw-bold">Tap to Fill Credentials:</div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-dark w-50" onclick="fillCredentials('admin@restaurant.pk', 'Admin@123')">Admin</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-50" onclick="fillCredentials('cashier@restaurant.pk', 'Cashier@123')">Cashier</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    function fillCredentials(email, pass) {
+        $('#emailInput').val(email);
+        $('#passwordInput').val(pass);
+        $('#loginForm').submit();
+    }
+</script>
+}

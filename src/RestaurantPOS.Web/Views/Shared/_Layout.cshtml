@@ -4,112 +4,141 @@
     var currentBusinessDate = BusinessDayService.CalculateBusinessDate(nowPkt);
     var (winStart, winEnd) = BusinessDayService.GetBusinessDayWindow(currentBusinessDate);
     var isAdmin = User.IsInRole("Admin");
+    var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAct = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Restaurant POS & Management</title>
+    <title>@ViewData["Title"] - SpiceNight Restaurant POS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
-    <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-        .navbar-brand { font-weight: 700; letter-spacing: 0.3px; }
-        .business-day-pill { background: #1e293b; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 4px 10px; font-size: 0.82rem; }
-        .pos-product-btn { min-height: 92px; transition: transform 0.08s ease-in-out; cursor: pointer; user-select: none; }
-        .pos-product-btn:active { transform: scale(0.97); }
-        .card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-        @@media print {
-            .no-print { display: none !important; }
-            body { background: #fff !important; }
-            .card { box-shadow: none !important; border: 1px solid #ddd !important; }
-        }
-    </style>
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
 </head>
 <body>
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <nav class="navbar navbar-expand-xl navbar-dark bg-dark shadow-sm no-print py-2">
+        <nav class="navbar navbar-expand-xl navbar-dark pos-navbar sticky-top no-print">
             <div class="container-fluid">
-                <a class="navbar-brand text-warning" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-shop me-1"></i>SpiceNight POS
+                <a class="pos-brand-logo me-3" asp-controller="Home" asp-action="Index">
+                    <span class="pos-brand-icon"><i class="bi bi-fire"></i></span>
+                    <div>
+                        <div class="lh-1">SpiceNight</div>
+                        <small class="text-white-50 fw-normal" style="font-size: 0.68rem;">POS & Restaurant ERP</small>
+                    </div>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
                 <div class="collapse navbar-collapse" id="mainNav">
-                    <ul class="navbar-nav me-auto mb-2 mb-xl-0">
+                    <ul class="navbar-nav me-auto mb-2 mb-xl-0 gap-1">
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                            <a class="nav-link @(currentCtrl == "Home" ? "active-nav" : "")" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-grid-1x2-fill"></i>Dashboard
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-warning fw-bold" asp-controller="Pos" asp-action="Index"><i class="bi bi-display me-1"></i>POS Screen</a>
+                            <a class="nav-link pos-launch-link" asp-controller="Pos" asp-action="Index">
+                                <i class="bi bi-display"></i>POS Terminal
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Pos" asp-action="SalesHistory"><i class="bi bi-receipt me-1"></i>Invoices</a>
+                            <a class="nav-link @(currentCtrl == "Pos" && currentAct == "SalesHistory" ? "active-nav" : "")" asp-controller="Pos" asp-action="SalesHistory">
+                                <i class="bi bi-receipt-cutoff"></i>Invoices
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="SalesReturns" asp-action="Index"><i class="bi bi-arrow-return-left me-1"></i>Sales Return</a>
+                            <a class="nav-link @(currentCtrl == "SalesReturns" ? "active-nav" : "")" asp-controller="SalesReturns" asp-action="Index">
+                                <i class="bi bi-arrow-return-left"></i>Returns
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="CashRegister" asp-action="Index"><i class="bi bi-cash-Lock me-1"></i>Cash Register</a>
+                            <a class="nav-link @(currentCtrl == "CashRegister" ? "active-nav" : "")" asp-controller="CashRegister" asp-action="Index">
+                                <i class="bi bi-safe2"></i>Cash Drawer
+                            </a>
                         </li>
                         @if (isAdmin)
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Products" asp-action="Index"><i class="bi bi-box-seam me-1"></i>Products</a>
+                                <a class="nav-link @(currentCtrl == "Products" ? "active-nav" : "")" asp-controller="Products" asp-action="Index">
+                                    <i class="bi bi-box-seam"></i>Menu & Stock
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Purchases" asp-action="Index"><i class="bi bi-cart-plus me-1"></i>Purchases</a>
+                                <a class="nav-link @(currentCtrl == "Purchases" ? "active-nav" : "")" asp-controller="Purchases" asp-action="Index">
+                                    <i class="bi bi-bag-plus"></i>Purchases
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Expenses" asp-action="Index"><i class="bi bi-wallet2 me-1"></i>Expenses</a>
+                                <a class="nav-link @(currentCtrl == "Expenses" ? "active-nav" : "")" asp-controller="Expenses" asp-action="Index">
+                                    <i class="bi bi-wallet2"></i>Expenses
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Inventory" asp-action="Index"><i class="bi bi-clipboard-data me-1"></i>Stock Ledger</a>
+                                <a class="nav-link @(currentCtrl == "Inventory" ? "active-nav" : "")" asp-controller="Inventory" asp-action="Index">
+                                    <i class="bi bi-layers"></i>Ledger
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-info fw-semibold" asp-controller="Reports" asp-action="DailyReport"><i class="bi bi-bar-chart-line me-1"></i>Daily Report</a>
+                                <a class="nav-link @(currentCtrl == "Reports" ? "active-nav" : "")" asp-controller="Reports" asp-action="DailyReport">
+                                    <i class="bi bi-bar-chart-line-fill text-info"></i>Daily Report
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Users"><i class="bi bi-people me-1"></i>Users</a>
+                                <a class="nav-link @(currentCtrl == "Account" ? "active-nav" : "")" asp-controller="Account" asp-action="Users">
+                                    <i class="bi bi-people"></i>Staff
+                                </a>
                             </li>
                         }
                     </ul>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="business-day-pill" title="Window: @winStart.ToString("dd MMM hh:mm tt") to @winEnd.ToString("dd MMM hh:mm tt")">
-                            <i class="bi bi-calendar-check me-1"></i>Business Date: <strong>@currentBusinessDate.ToString("dd MMM yyyy")</strong>
-                            <span class="text-light ms-1 small">(@nowPkt.ToString("hh:mm tt") PKT)</span>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="business-day-pill" title="Shift Window: @winStart.ToString("dd MMM hh:mm tt") to @winEnd.ToString("dd MMM hh:mm tt") PKT">
+                            <span class="pulse-dot"></span>
+                            <span>Business Day: <strong class="text-info">@currentBusinessDate.ToString("dd MMM yyyy")</strong></span>
+                            <span class="text-white-50">|</span>
+                            <span class="font-mono small text-warning">@nowPkt.ToString("hh:mm tt")</span>
                         </div>
-                        <span class="badge bg-secondary">@User.Identity.Name</span>
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-box-arrow-right"></i></button>
-                        </form>
+
+                        <div class="d-flex align-items-center bg-dark bg-opacity-50 border border-secondary border-opacity-25 rounded-3 px-2 py-1">
+                            <i class="bi bi-person-circle text-warning me-1"></i>
+                            <span class="text-light small fw-semibold me-2">@(User.IsInRole("Admin") ? "Admin" : "Cashier")</span>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-danger py-0 px-2" title="Sign Out">
+                                    <i class="bi bi-power"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </nav>
     }
 
-    <div class="container-fluid py-3">
+    <main class="container-fluid py-3 px-lg-4">
         @if (TempData["Success"] != null)
         {
-            <div class="alert alert-success alert-dismissible fade show no-print" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show d-flex align-items-center no-print rounded-3" role="alert">
+                <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                <div class="fw-medium">@TempData["Success"]</div>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
         @if (TempData["Error"] != null)
         {
-            <div class="alert alert-danger alert-dismissible fade show no-print" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show d-flex align-items-center no-print rounded-3" role="alert">
+                <i class="bi bi-exclamation-octagon-fill fs-5 me-2 text-danger"></i>
+                <div class="fw-medium">@TempData["Error"]</div>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
 
         @RenderBody()
-    </div>
+    </main>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

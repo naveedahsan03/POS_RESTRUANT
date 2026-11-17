@@ -2,26 +2,33 @@
 @{
     ViewData["Title"] = "Daily Business Report";
 }
+<!-- Filter Toolbar -->
 <div class="card mb-3 no-print">
-    <div class="card-body py-2">
+    <div class="card-body py-2 px-3">
         <form method="get" class="row g-2 align-items-end">
             <div class="col-auto">
                 <div class="btn-group btn-group-sm">
-                    <a asp-action="DailyReport" asp-route-preset="Today" class="btn @(Model.FilterPreset == "Today" ? "btn-dark" : "btn-outline-dark")">Today's Business Day</a>
-                    <a asp-action="DailyReport" asp-route-preset="Yesterday" class="btn @(Model.FilterPreset == "Yesterday" ? "btn-dark" : "btn-outline-dark")">Yesterday</a>
+                    <a asp-action="DailyReport" asp-route-preset="Today" class="btn @(Model.FilterPreset == "Today" ? "btn-dark" : "btn-outline-secondary")">
+                        <i class="bi bi-calendar-event me-1"></i>Today's Shift
+                    </a>
+                    <a asp-action="DailyReport" asp-route-preset="Yesterday" class="btn @(Model.FilterPreset == "Yesterday" ? "btn-dark" : "btn-outline-secondary")">
+                        Yesterday's Shift
+                    </a>
                 </div>
             </div>
             <div class="col-auto">
-                <label class="form-label small mb-0 fw-semibold">From Business Date</label>
+                <label class="form-label small mb-0 fw-semibold text-muted">From Business Date</label>
                 <input type="date" name="startDate" value="@Model.StartBusinessDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
             </div>
             <div class="col-auto">
-                <label class="form-label small mb-0 fw-semibold">To Business Date</label>
+                <label class="form-label small mb-0 fw-semibold text-muted">To Business Date</label>
                 <input type="date" name="endDate" value="@Model.EndBusinessDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
             </div>
             <input type="hidden" name="preset" value="Custom" />
             <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-funnel me-1"></i>Generate Report</button>
+                <button type="submit" class="btn btn-sm btn-warning fw-bold px-3">
+                    <i class="bi bi-funnel-fill me-1"></i>Apply Filter
+                </button>
             </div>
             <div class="col-auto ms-auto d-flex gap-2">
                 <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.print()">
@@ -31,201 +38,193 @@
                    asp-route-startDate="@Model.StartBusinessDate.ToString("yyyy-MM-dd")"
                    asp-route-endDate="@Model.EndBusinessDate.ToString("yyyy-MM-dd")"
                    asp-route-preset="@Model.FilterPreset"
-                   class="btn btn-sm btn-success">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                   class="btn btn-sm btn-success fw-bold">
+                    <i class="bi bi-file-earmark-excel-fill me-1"></i>Export Excel (.xlsx)
                 </a>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Report Header Banner -->
-<div class="card mb-3 border-top border-4 border-primary">
-    <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+<!-- Executive Report Header Banner -->
+<div class="card border-0 mb-3 text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+    <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center">
         <div>
-            <h4 class="fw-bold mb-1">DAILY BUSINESS REPORT</h4>
-            <div class="small text-muted">
-                Selected Business Date:
-                <strong class="text-dark">
-                    @(Model.StartBusinessDate == Model.EndBusinessDate
-                        ? Model.StartBusinessDate.ToString("dd MMMM yyyy")
-                        : $"{Model.StartBusinessDate:dd MMM yyyy} – {Model.EndBusinessDate:dd MMM yyyy}")
-                </strong>
-            </div>
-            <div class="small text-primary fw-semibold">
-                Exact Shift Window: From @Model.ExactWindowStart.ToString("dd MMMM yyyy, hh:mm tt") To @Model.ExactWindowEnd.ToString("dd MMMM yyyy, hh:mm tt") (Pakistan Standard Time)
+            <span class="badge bg-warning text-dark mb-2">OFFICIAL DAILY BUSINESS REPORT</span>
+            <h4 class="fw-extrabold mb-1">
+                Business Date:
+                @(Model.StartBusinessDate == Model.EndBusinessDate
+                    ? Model.StartBusinessDate.ToString("dddd, dd MMMM yyyy")
+                    : $"{Model.StartBusinessDate:dd MMM yyyy} – {Model.EndBusinessDate:dd MMM yyyy}")
+            </h4>
+            <div class="small text-info">
+                <i class="bi bi-clock me-1"></i>Shift Window:
+                <strong>@Model.ExactWindowStart.ToString("dd MMM yyyy, hh:mm tt")</strong> to
+                <strong>@Model.ExactWindowEnd.ToString("dd MMM yyyy, hh:mm tt")</strong> (Asia/Karachi)
             </div>
         </div>
-        <div class="text-end">
-            <div class="small text-muted">Total Completed Orders: <strong>@Model.TotalOrders</strong></div>
-            <div class="small text-muted">Average Order Value: <strong>Rs. @Model.AverageOrderValue.ToString("N2")</strong></div>
+        <div class="text-md-end mt-2 mt-md-0">
+            <div class="fs-5 fw-bold text-warning">Total Orders: @Model.TotalOrders</div>
+            <div class="small text-white-50">Average Order Value: Rs. @Model.AverageOrderValue.ToString("N2")</div>
         </div>
     </div>
 </div>
 
 <!-- 12 Core Financial Metrics Grid -->
-<div class="row g-2 mb-3">
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">1. Total Gross Sales</span>
-            <h5 class="fw-bold mb-0">Rs. @Model.TotalGrossSales.ToString("N2")</h5>
+<div class="row g-2 mb-4">
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">1. Total Gross Sales</div>
+            <h5 class="fw-extrabold text-dark mb-0 mt-1">Rs. @Model.TotalGrossSales.ToString("N2")</h5>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">2. Total Discounts</span>
-            <h5 class="fw-bold text-warning mb-0">Rs. @Model.TotalDiscounts.ToString("N2")</h5>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">2. Total Discounts</div>
+            <h5 class="fw-extrabold text-warning mb-0 mt-1">- Rs. @Model.TotalDiscounts.ToString("N2")</h5>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">3. Sales Returns</span>
-            <h5 class="fw-bold text-danger mb-0">Rs. @Model.SalesReturns.ToString("N2")</h5>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">3. Sales Returns</div>
+            <h5 class="fw-extrabold text-danger mb-0 mt-1">- Rs. @Model.SalesReturns.ToString("N2")</h5>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-success-subtle">
-            <span class="small text-dark fw-semibold">4. Net Sales</span>
-            <h5 class="fw-bold text-success mb-0">Rs. @Model.NetSales.ToString("N2")</h5>
-        </div>
-    </div>
-
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">5. Cash Received (Net)</span>
-            <h5 class="fw-bold text-success mb-0">Rs. @Model.CashReceived.ToString("N2")</h5>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">6. Card Payments</span>
-            <h5 class="fw-bold text-primary mb-0">Rs. @Model.CardPayments.ToString("N2")</h5>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">7. Online Payments</span>
-            <h5 class="fw-bold text-info mb-0">Rs. @Model.OnlinePayments.ToString("N2")</h5>
-        </div>
-    </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">8. Total Expenses</span>
-            <h5 class="fw-bold text-danger mb-0">Rs. @Model.TotalExpenses.ToString("N2")</h5>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100 border-start border-4 border-success bg-success-subtle bg-opacity-25">
+            <div class="small text-success fw-bold">4. Net Sales</div>
+            <h5 class="fw-extrabold text-success mb-0 mt-1">Rs. @Model.NetSales.ToString("N2")</h5>
         </div>
     </div>
 
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">9. Purchase Amount</span>
-            <h5 class="fw-bold mb-0">Rs. @Model.PurchaseAmount.ToString("N2")</h5>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">5. Cash Received (Net)</div>
+            <h5 class="fw-extrabold text-success mb-0 mt-1">Rs. @Model.CashReceived.ToString("N2")</h5>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-white">
-            <span class="small text-muted">10. Est. Cost of Goods Sold</span>
-            <h5 class="fw-bold mb-0">Rs. @Model.EstimatedCostOfGoodsSold.ToString("N2")</h5>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">6. Card Payments</div>
+            <h5 class="fw-extrabold text-primary mb-0 mt-1">Rs. @Model.CardPayments.ToString("N2")</h5>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-info-subtle">
-            <span class="small text-dark fw-semibold">11. Gross Profit</span>
-            <h5 class="fw-bold text-primary mb-0">Rs. @Model.GrossProfit.ToString("N2")</h5>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">7. Online Payments</div>
+            <h5 class="fw-extrabold text-info mb-0 mt-1">Rs. @Model.OnlinePayments.ToString("N2")</h5>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="card p-3 bg-dark text-white">
-            <span class="small text-warning fw-semibold">12. Net Profit (Estimated)</span>
-            <h5 class="fw-bold text-warning mb-0">Rs. @Model.EstimatedNetProfit.ToString("N2")</h5>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">8. Total Expenses</div>
+            <h5 class="fw-extrabold text-danger mb-0 mt-1">Rs. @Model.TotalExpenses.ToString("N2")</h5>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">9. Purchase Amount</div>
+            <h5 class="fw-extrabold text-dark mb-0 mt-1">Rs. @Model.PurchaseAmount.ToString("N2")</h5>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100">
+            <div class="small text-muted fw-semibold">10. Est. Cost of Goods (COGS)</div>
+            <h5 class="fw-extrabold text-secondary mb-0 mt-1">Rs. @Model.EstimatedCostOfGoodsSold.ToString("N2")</h5>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100 border-start border-4 border-primary">
+            <div class="small text-primary fw-bold">11. Gross Profit</div>
+            <h5 class="fw-extrabold text-primary mb-0 mt-1">Rs. @Model.GrossProfit.ToString("N2")</h5>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-4 col-6">
+        <div class="kpi-card p-3 h-100 text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+            <div class="small text-warning fw-bold">12. Net Profit (Estimated)</div>
+            <h5 class="fw-extrabold text-warning mb-0 mt-1">Rs. @Model.EstimatedNetProfit.ToString("N2")</h5>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
-    <!-- Product-Wise Sales -->
+    <!-- Product-Wise & Category-Wise Breakdown -->
     <div class="col-lg-7">
         <div class="card mb-3">
-            <div class="card-header bg-white fw-bold">Product-Wise Sales Breakdown</div>
+            <div class="card-header">Product-Wise Sales & Profit Breakdown</div>
             <div class="card-body p-0">
-                <table class="table table-sm table-striped mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Product</th>
-                            <th>Category</th>
-                            <th class="text-end">Qty</th>
-                            <th class="text-end">Gross</th>
-                            <th class="text-end">Net Sales</th>
-                            <th class="text-end">COGS</th>
-                            <th class="text-end">Profit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var p in Model.ProductWiseSales)
-                        {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td class="fw-semibold">@p.ProductName</td>
-                                <td>@p.CategoryName</td>
-                                <td class="text-end">@p.QuantitySold.ToString("N2")</td>
-                                <td class="text-end">Rs. @p.GrossAmount.ToString("N2")</td>
-                                <td class="text-end fw-bold">Rs. @p.NetAmount.ToString("N2")</td>
-                                <td class="text-end">Rs. @p.EstimatedCost.ToString("N2")</td>
-                                <td class="text-end text-success">Rs. @p.EstimatedProfit.ToString("N2")</td>
+                                <th class="ps-3">Product</th>
+                                <th>Category</th>
+                                <th class="text-end">Qty</th>
+                                <th class="text-end">Gross</th>
+                                <th class="text-end">Net Sales</th>
+                                <th class="text-end">COGS</th>
+                                <th class="text-end pe-3">Profit</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.ProductWiseSales)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-semibold">@p.ProductName</td>
+                                    <td><span class="badge bg-light text-secondary border">@p.CategoryName</span></td>
+                                    <td class="text-end fw-bold">@p.QuantitySold.ToString("N0")</td>
+                                    <td class="text-end text-muted small">Rs. @p.GrossAmount.ToString("N0")</td>
+                                    <td class="text-end fw-bold">Rs. @p.NetAmount.ToString("N0")</td>
+                                    <td class="text-end text-muted small">Rs. @p.EstimatedCost.ToString("N0")</td>
+                                    <td class="text-end pe-3 text-success fw-bold">Rs. @p.EstimatedProfit.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- Category-Wise & Payment-Wise -->
         <div class="row g-3">
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-white fw-bold">Category-Wise Sales</div>
-                    <div class="card-body p-0">
-                        <table class="table table-sm mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Category</th>
-                                    <th class="text-end">Qty</th>
-                                    <th class="text-end">Sales</th>
-                                    <th class="text-end">%</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var c in Model.CategoryWiseSales)
-                                {
-                                    <tr>
-                                        <td>@c.CategoryName</td>
-                                        <td class="text-end">@c.QuantitySold.ToString("N0")</td>
-                                        <td class="text-end fw-bold">Rs. @c.TotalSalesAmount.ToString("N2")</td>
-                                        <td class="text-end">@c.PercentageOfSales%</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                <div class="card h-100">
+                    <div class="card-header">Category-Wise Share</div>
+                    <div class="card-body">
+                        @foreach (var c in Model.CategoryWiseSales)
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                    <span>@c.CategoryName (@c.QuantitySold.ToString("N0") sold)</span>
+                                    <span>Rs. @c.TotalSalesAmount.ToString("N0") (@c.PercentageOfSales%)</span>
+                                </div>
+                                <div class="progress" style="height: 7px;">
+                                    <div class="progress-bar bg-warning" style="width: @c.PercentageOfSales%"></div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-white fw-bold">Payment-Wise Sales</div>
+                <div class="card h-100">
+                    <div class="card-header">Payment Method Reconciliation</div>
                     <div class="card-body p-0">
-                        <table class="table table-sm mb-0">
-                            <thead class="table-light">
+                        <table class="table align-middle mb-0">
+                            <thead>
                                 <tr>
-                                    <th>Method</th>
-                                    <th class="text-end">Txns</th>
-                                    <th class="text-end">Amount</th>
+                                    <th class="ps-3">Mode</th>
+                                    <th class="text-center">Transactions</th>
+                                    <th class="text-end pe-3">Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var pm in Model.PaymentWiseSales)
                                 {
                                     <tr>
-                                        <td class="fw-semibold">@pm.PaymentMethod</td>
-                                        <td class="text-end">@pm.TransactionCount</td>
-                                        <td class="text-end fw-bold">Rs. @pm.TotalAmount.ToString("N2")</td>
+                                        <td class="ps-3 fw-bold">@pm.PaymentMethod</td>
+                                        <td class="text-center"><span class="badge bg-secondary">@pm.TransactionCount</span></td>
+                                        <td class="text-end pe-3 fw-bold">Rs. @pm.TotalAmount.ToString("N2")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -236,26 +235,39 @@
         </div>
     </div>
 
-    <!-- Hourly Sales Breakdown (6:00 PM to 4:00 AM Shift) -->
+    <!-- Hourly Sales Breakdown (6:00 PM to Next-Day 4:00 AM) -->
     <div class="col-lg-5">
-        <div class="card">
-            <div class="card-header bg-white fw-bold">Hourly Sales Report (6:00 PM – Next Day 4:00 AM)</div>
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Hourly Shift Performance (6 PM – 4 AM)</span>
+                <span class="badge bg-info-subtle text-info">After-Midnight Highlighted</span>
+            </div>
             <div class="card-body p-0">
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
                         <tr>
-                            <th>Shift Hour Slot</th>
-                            <th class="text-end">Orders</th>
-                            <th class="text-end">Sales Amount</th>
+                            <th class="ps-3">Shift Hour Window</th>
+                            <th class="text-center">Orders</th>
+                            <th class="text-end pe-3">Sales (PKR)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var h in Model.HourlySales)
                         {
-                            <tr class="@(h.Hour24 < 4 ? "table-info" : "")">
-                                <td class="small fw-semibold">@h.HourLabel</td>
-                                <td class="text-end">@h.OrderCount</td>
-                                <td class="text-end fw-bold">Rs. @h.TotalSales.ToString("N2")</td>
+                            <tr class="@(h.Hour24 < 4 ? "table-info bg-opacity-25" : "")">
+                                <td class="ps-3 small fw-semibold">
+                                    @if (h.Hour24 < 4)
+                                    {
+                                        <i class="bi bi-moon-stars-fill text-primary me-1"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-clock text-muted me-1"></i>
+                                    }
+                                    @h.HourLabel
+                                </td>
+                                <td class="text-center fw-bold">@h.OrderCount</td>
+                                <td class="text-end pe-3 fw-bold">Rs. @h.TotalSales.ToString("N2")</td>
                             </tr>
                         }
                     </tbody>

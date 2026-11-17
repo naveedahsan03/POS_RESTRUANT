@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Touchscreen POS";
+    ViewData["Title"] = "Touchscreen POS Terminal";
     var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
     var products = ViewBag.Products as List<ProductDto> ?? new List<ProductDto>();
     var tables = ViewBag.Tables as List<RestaurantTable> ?? new List<RestaurantTable>();
@@ -8,50 +8,62 @@
 }
 
 <div class="row g-3">
-    <!-- LEFT COLUMN: Category Tabs, Search & Touchscreen Product Grid -->
+    <!-- LEFT PANEL: Search, Category Pills & Touchscreen Product Grid -->
     <div class="col-lg-7">
         <div class="card h-100">
-            <div class="card-header bg-white py-2">
+            <div class="card-header bg-white py-3">
                 <div class="row g-2 align-items-center">
-                    <div class="col-md-6">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-warning"><i class="bi bi-search"></i></span>
-                            <input type="text" id="posSearch" class="form-control" placeholder="Search item name or scan barcode..." autofocus />
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-warning"></i></span>
+                            <input type="text" id="posSearch" class="form-control border-start-0 ps-0" placeholder="Search dish name or scan barcode..." autofocus />
                         </div>
                     </div>
-                    <div class="col-md-6 text-md-end">
+                    <div class="col-md-5 text-md-end">
                         @if (heldOrders.Any())
                         {
                             <div class="dropdown d-inline">
-                                <button class="btn btn-sm btn-outline-warning dropdown-toggle fw-bold" data-bs-toggle="dropdown">
-                                    <i class="bi bi-pause-circle me-1"></i>Held Orders (@heldOrders.Count)
+                                <button class="btn btn-warning dropdown-toggle fw-bold shadow-sm" data-bs-toggle="dropdown">
+                                    <i class="bi bi-pause-circle-fill me-1"></i>Held Orders (@heldOrders.Count)
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                     @foreach (var h in heldOrders)
                                     {
                                         <li>
-                                            <a class="dropdown-item small" asp-action="Index" asp-route-resumeSaleId="@h.Id">
-                                                <strong>@h.InvoiceNumber</strong> (@h.OrderType @(h.RestaurantTable != null ? $"[{h.RestaurantTable.TableNumber}]" : "")) - Rs. @h.TotalAmount.ToString("N0")
+                                            <a class="dropdown-item py-2 small" asp-action="Index" asp-route-resumeSaleId="@h.Id">
+                                                <div class="fw-bold text-dark">@h.InvoiceNumber — Rs. @h.TotalAmount.ToString("N0")</div>
+                                                <div class="text-muted">@h.OrderType @(h.RestaurantTable != null ? $"• Table {h.RestaurantTable.TableNumber}" : "")</div>
                                             </a>
                                         </li>
                                     }
                                 </ul>
                             </div>
                         }
+                        else
+                        {
+                            <span class="badge bg-light text-secondary border py-2 px-3">
+                                <i class="bi bi-check2-all text-success me-1"></i>No Held Orders
+                            </span>
+                        }
                     </div>
                 </div>
 
-                <!-- Category Filter Buttons -->
-                <div class="d-flex flex-wrap gap-1 mt-2" id="categoryButtons">
-                    <button type="button" class="btn btn-sm btn-dark cat-filter active" data-cat="0">All Items</button>
+                <!-- Category Filter Pills -->
+                <div class="d-flex flex-wrap gap-2 mt-3" id="categoryButtons">
+                    <button type="button" class="btn btn-sm btn-dark cat-filter active" data-cat="0">
+                        <i class="bi bi-grid-fill me-1"></i>All Menu (@products.Count)
+                    </button>
                     @foreach (var cat in categories)
                     {
-                        <button type="button" class="btn btn-sm btn-outline-dark cat-filter" data-cat="@cat.Id">@cat.Name</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary cat-filter" data-cat="@cat.Id">
+                            @cat.Name
+                        </button>
                     }
                 </div>
             </div>
 
-            <div class="card-body" style="max-height: 72vh; overflow-y: auto;">
+            <!-- Touchscreen Product Tiles -->
+            <div class="card-body bg-light bg-opacity-50" style="max-height: 70vh; overflow-y: auto;">
                 <div class="row g-2" id="productGrid">
                     @foreach (var p in products)
                     {
@@ -59,15 +71,22 @@
                              data-cat="@p.CategoryId"
                              data-name="@p.Name.ToLower()"
                              data-barcode="@(p.Barcode?.ToLower() ?? "")">
-                            <div class="card pos-product-btn border h-100 p-2 d-flex flex-column justify-content-between @(p.IsLowStock ? "border-warning" : "border-secondary-subtle")"
+                            <div class="pos-product-card @(p.IsLowStock ? "border-warning" : "")"
                                  onclick="addToCart(@p.Id, '@Html.Raw(p.Name.Replace("'", "\\'"))', @p.SalePrice, @p.CurrentStock)">
                                 <div>
-                                    <div class="fw-bold small text-dark lh-sm">@p.Name</div>
-                                    <span class="badge bg-light text-secondary border mt-1" style="font-size:0.7rem;">Stock: @p.CurrentStock.ToString("N0") @p.Unit</span>
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">@p.CategoryName</span>
+                                        <span class="badge @(p.IsLowStock ? "bg-danger-subtle text-danger" : "bg-success-subtle text-success")" style="font-size: 0.65rem;">
+                                            @p.CurrentStock.ToString("N0") @p.Unit
+                                        </span>
+                                    </div>
+                                    <div class="fw-bold text-dark small lh-sm mt-1">@p.Name</div>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <span class="fw-bold text-primary">Rs. @p.SalePrice.ToString("N0")</span>
-                                    <i class="bi bi-plus-circle-fill text-success fs-5"></i>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light">
+                                    <span class="price-pill">Rs. @p.SalePrice.ToString("N0")</span>
+                                    <span class="btn btn-sm btn-light rounded-circle py-0 px-1 text-success">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -77,35 +96,39 @@
         </div>
     </div>
 
-    <!-- RIGHT COLUMN: Order Cart, Totals & Payment -->
+    <!-- RIGHT PANEL: Active Order Cart & Instant Checkout -->
     <div class="col-lg-5">
-        <div class="card h-100 border-top border-4 border-warning">
+        <div class="card h-100">
             <div class="card-header bg-white py-2">
+                <!-- Interactive Order Type Buttons -->
+                <input type="hidden" id="orderType" value="1" />
+                <div class="btn-group w-100 order-type-selector mb-2" role="group">
+                    <button type="button" class="btn btn-dark order-type-btn" data-type="1" onclick="selectOrderType(1)">
+                        <i class="bi bi-shop-window me-1"></i>Dine In
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary order-type-btn" data-type="2" onclick="selectOrderType(2)">
+                        <i class="bi bi-bag-check me-1"></i>Takeaway
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary order-type-btn" data-type="3" onclick="selectOrderType(3)">
+                        <i class="bi bi-bicycle me-1"></i>Delivery
+                    </button>
+                </div>
+
                 <div class="row g-2">
-                    <div class="col-4">
-                        <label class="form-label small mb-0 fw-semibold">Order Type</label>
-                        <select id="orderType" class="form-select form-select-sm" onchange="toggleOrderTypeFields()">
-                            <option value="1">Dine In</option>
-                            <option value="2">Takeaway</option>
-                            <option value="3">Delivery</option>
-                        </select>
-                    </div>
-                    <div class="col-4" id="tableSelectWrap">
-                        <label class="form-label small mb-0 fw-semibold">Table</label>
-                        <select id="restaurantTableId" class="form-select form-select-sm">
-                            <option value="">-- Select Table --</option>
+                    <div class="col-6" id="tableSelectWrap">
+                        <select id="restaurantTableId" class="form-select form-select-sm fw-semibold">
+                            <option value="">-- Select Dine-In Table --</option>
                             @foreach (var t in tables)
                             {
-                                <option value="@t.Id">@t.TableNumber (@t.Status)</option>
+                                <option value="@t.Id">@t.TableNumber (@t.Capacity Seats - @t.Status)</option>
                             }
                         </select>
                     </div>
-                    <div class="col-4">
-                        <label class="form-label small mb-0 fw-semibold">Customer Name</label>
-                        <input type="text" id="customerName" class="form-control form-control-sm" value="Walk-In Customer" />
+                    <div class="col-6" id="customerNameWrap">
+                        <input type="text" id="customerName" class="form-control form-control-sm" value="Walk-In Customer" placeholder="Customer Name" />
                     </div>
                     <div class="col-6 d-none" id="deliveryPhoneWrap">
-                        <input type="text" id="customerPhone" class="form-control form-control-sm" placeholder="Customer Phone..." />
+                        <input type="text" id="customerPhone" class="form-control form-control-sm" placeholder="Phone (03xx-...)" />
                     </div>
                     <div class="col-6 d-none" id="deliveryAddrWrap">
                         <input type="text" id="deliveryAddress" class="form-control form-control-sm" placeholder="Delivery Address..." />
@@ -113,91 +136,110 @@
                 </div>
             </div>
 
-            <!-- Cart Table -->
-            <div class="card-body p-0" style="max-height: 36vh; overflow-y: auto;">
+            <!-- Cart Items List -->
+            <div class="card-body p-0" style="max-height: 33vh; overflow-y: auto;">
                 <table class="table table-sm align-middle mb-0">
-                    <thead class="table-light sticky-top">
+                    <thead class="sticky-top">
                         <tr>
-                            <th>Item</th>
-                            <th class="text-center" style="width:115px;">Qty</th>
+                            <th class="ps-3">Dish / Item</th>
+                            <th class="text-center" style="width:120px;">Qty</th>
                             <th class="text-end">Price</th>
                             <th class="text-end">Total</th>
-                            <th></th>
+                            <th class="pe-2"></th>
                         </tr>
                     </thead>
                     <tbody id="cartBody">
-                        <tr><td colspan="5" class="text-center text-muted py-4">Tap products on the left to add to order</td></tr>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">
+                                <i class="bi bi-basket2 fs-2 d-block mb-1 opacity-50"></i>
+                                Tap any menu item on the left to add to bill
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Financial Totals & Payment Controls -->
-            <div class="card-footer bg-white">
+            <!-- Bill Calculation & Checkout Footer -->
+            <div class="card-footer bg-white border-top pt-3">
                 <div class="row g-2 mb-2">
                     <div class="col-4">
-                        <label class="small text-muted">Subtotal</label>
+                        <label class="small text-muted fw-semibold">Subtotal</label>
                         <input type="text" id="subTotalDisplay" class="form-control form-control-sm fw-bold bg-light" value="0.00" readonly />
                     </div>
                     <div class="col-4">
-                        <label class="small text-muted">Discount (PKR)</label>
-                        <input type="number" id="discountInput" class="form-control form-control-sm" value="0" min="0" oninput="recalcTotals()" />
+                        <label class="small text-muted fw-semibold">Discount (Rs)</label>
+                        <input type="number" id="discountInput" class="form-control form-control-sm fw-bold" value="0" min="0" oninput="recalcTotals()" />
                     </div>
                     <div class="col-4">
-                        <label class="small text-muted">Tax (%)</label>
+                        <label class="small text-muted fw-semibold">Tax (%)</label>
                         <input type="number" id="taxPctInput" class="form-control form-control-sm" value="0" min="0" max="100" oninput="recalcTotals()" />
                     </div>
                 </div>
 
-                <div class="p-2 rounded bg-dark text-white d-flex justify-content-between align-items-center mb-2">
-                    <span class="fs-6 fw-semibold">GRAND TOTAL</span>
-                    <span class="fs-3 fw-bold text-warning" id="grandTotalDisplay">Rs. 0.00</span>
+                <!-- Dark Grand Total Display -->
+                <div class="grand-total-banner d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <div class="small text-white-50 fw-semibold">PAYABLE GRAND TOTAL</div>
+                        <span class="badge bg-warning text-dark" id="cartCountBadge">0 Items</span>
+                    </div>
+                    <div class="fs-2 fw-extrabold text-warning font-mono" id="grandTotalDisplay">Rs. 0.00</div>
                 </div>
 
-                <div class="row g-2 mb-2">
+                <!-- Payment Method & Quick Cash Tender Buttons -->
+                <div class="row g-2 mb-2 align-items-end">
                     <div class="col-4">
-                        <label class="small fw-semibold">Payment Method</label>
-                        <select id="paymentMethod" class="form-select form-select-sm" onchange="toggleSplitPayment()">
-                            <option value="1">Cash</option>
-                            <option value="2">Card</option>
-                            <option value="3">Online</option>
-                            <option value="4">Split Payment</option>
+                        <label class="small fw-semibold">Payment Mode</label>
+                        <select id="paymentMethod" class="form-select form-select-sm fw-bold" onchange="toggleSplitPayment()">
+                            <option value="1">💵 Cash</option>
+                            <option value="2">💳 Card</option>
+                            <option value="3">📱 Online</option>
+                            <option value="4">⚖️ Split</option>
                         </select>
                     </div>
                     <div class="col-4" id="singleReceivedWrap">
-                        <label class="small fw-semibold">Received (PKR)</label>
-                        <input type="number" id="receivedAmount" class="form-control form-control-sm fw-bold" value="0" oninput="recalcTotals()" />
+                        <label class="small fw-semibold">Cash Received</label>
+                        <input type="number" id="receivedAmount" class="form-control form-control-sm fw-bold border-primary" value="0" oninput="recalcTotals()" />
                     </div>
                     <div class="col-4">
                         <label class="small fw-semibold">Change Return</label>
-                        <input type="text" id="changeDisplay" class="form-control form-control-sm fw-bold text-success bg-light" value="0.00" readonly />
+                        <input type="text" id="changeDisplay" class="form-control form-control-sm fw-bold text-success bg-success-subtle" value="0.00" readonly />
                     </div>
                 </div>
 
+                <!-- 1-Tap Quick Cash Buttons -->
+                <div class="d-flex flex-wrap gap-1 mb-2" id="quickCashRow">
+                    <button type="button" class="btn btn-outline-secondary quick-cash-btn flex-grow-1" onclick="setQuickCash('exact')">Exact Cash</button>
+                    <button type="button" class="btn btn-outline-secondary quick-cash-btn flex-grow-1" onclick="setQuickCash(500)">Rs. 500</button>
+                    <button type="button" class="btn btn-outline-secondary quick-cash-btn flex-grow-1" onclick="setQuickCash(1000)">Rs. 1000</button>
+                    <button type="button" class="btn btn-outline-secondary quick-cash-btn flex-grow-1" onclick="setQuickCash(2000)">Rs. 2000</button>
+                    <button type="button" class="btn btn-outline-secondary quick-cash-btn flex-grow-1" onclick="setQuickCash(5000)">Rs. 5000</button>
+                </div>
+
                 <!-- Split Payment Breakdown Box -->
-                <div class="row g-2 mb-2 d-none border rounded p-2 bg-light" id="splitPaymentBox">
+                <div class="row g-2 mb-2 d-none border rounded-3 p-2 bg-light" id="splitPaymentBox">
                     <div class="col-4">
-                        <label class="small">Cash (PKR)</label>
+                        <label class="small fw-semibold">Cash (Rs)</label>
                         <input type="number" id="splitCash" class="form-control form-control-sm" value="0" oninput="recalcTotals()" />
                     </div>
                     <div class="col-4">
-                        <label class="small">Card (PKR)</label>
+                        <label class="small fw-semibold">Card (Rs)</label>
                         <input type="number" id="splitCard" class="form-control form-control-sm" value="0" oninput="recalcTotals()" />
                     </div>
                     <div class="col-4">
-                        <label class="small">Online (PKR)</label>
+                        <label class="small fw-semibold">Online (Rs)</label>
                         <input type="number" id="splitOnline" class="form-control form-control-sm" value="0" oninput="recalcTotals()" />
                     </div>
                 </div>
 
                 <div class="d-flex gap-2 mt-2">
-                    <button type="button" id="btnCompletePrint" class="btn btn-success flex-grow-1 fw-bold py-2" onclick="submitPosOrder(false)">
-                        <i class="bi bi-printer-fill me-1"></i>Pay & Print Receipt
+                    <button type="button" id="btnCompletePrint" class="btn btn-success flex-grow-1 fw-bold py-2 shadow-sm" onclick="submitPosOrder(false)">
+                        <i class="bi bi-printer-fill me-1"></i>Complete & Print Bill
                     </button>
-                    <button type="button" id="btnHoldOrder" class="btn btn-warning fw-bold" onclick="submitPosOrder(true)">
+                    <button type="button" id="btnHoldOrder" class="btn btn-warning fw-bold px-3" onclick="submitPosOrder(true)">
                         <i class="bi bi-pause-fill me-1"></i>Hold
                     </button>
-                    <button type="button" class="btn btn-outline-danger" onclick="clearCart()">
-                        <i class="bi bi-x-lg"></i>
+                    <button type="button" class="btn btn-outline-danger px-3" onclick="clearCart()" title="Clear Cart">
+                        <i class="bi bi-trash3"></i>
                     </button>
                 </div>
             </div>
@@ -208,6 +250,7 @@
 @section Scripts {
 <script>
     let cart = [];
+    let currentGrandTotal = 0;
     let resumedSaleId = @(resumedOrder != null ? resumedOrder.SaleId : "null");
     let clientRequestToken = crypto.randomUUID ? crypto.randomUUID() : ('REQ-' + Date.now() + '-' + Math.random());
 
@@ -221,13 +264,30 @@
             }
         ];
         $(function() {
-            $('#orderType').val('@((int)resumedOrder.OrderType)');
+            selectOrderType(@((int)resumedOrder.OrderType));
             $('#discountInput').val('@resumedOrder.DiscountAmount');
             $('#taxPctInput').val('@resumedOrder.TaxPercentage');
-            toggleOrderTypeFields();
             renderCart();
         });
         </text>
+    }
+
+    function selectOrderType(typeId) {
+        $('#orderType').val(typeId);
+        $('.order-type-btn').removeClass('btn-dark').addClass('btn-outline-secondary');
+        $(`.order-type-btn[data-type="${typeId}"]`).removeClass('btn-outline-secondary').addClass('btn-dark');
+        $('#tableSelectWrap').toggleClass('d-none', typeId !== 1);
+        $('#customerNameWrap').toggleClass('col-12', typeId !== 1).toggleClass('col-6', typeId === 1);
+        $('#deliveryPhoneWrap, #deliveryAddrWrap').toggleClass('d-none', typeId !== 3);
+    }
+
+    function setQuickCash(val) {
+        if (val === 'exact') {
+            $('#receivedAmount').val(currentGrandTotal.toFixed(0));
+        } else {
+            $('#receivedAmount').val(val);
+        }
+        recalcTotals();
     }
 
     function addToCart(productId, name, price, stock) {
@@ -267,28 +327,37 @@
     function renderCart() {
         const tbody = $('#cartBody');
         tbody.empty();
+        const totalUnits = cart.reduce((s, i) => s + i.quantity, 0);
+        $('#cartCountBadge').text(`${totalUnits} Item${totalUnits === 1 ? '' : 's'}`);
+
         if (cart.length === 0) {
-            tbody.append('<tr><td colspan="5" class="text-center text-muted py-4">Tap products on the left to add to order</td></tr>');
+            tbody.append(`
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-5">
+                        <i class="bi bi-basket2 fs-2 d-block mb-1 opacity-50"></i>
+                        Tap any menu item on the left to add to bill
+                    </td>
+                </tr>`);
             recalcTotals();
             return;
         }
 
         cart.forEach(item => {
-            const lineTotal = (item.quantity * item.price).toFixed(2);
+            const lineTotal = (item.quantity * item.price).toFixed(0);
             tbody.append(`
                 <tr>
-                    <td class="fw-semibold small">${item.name}</td>
+                    <td class="ps-3 fw-semibold small">${item.name}</td>
                     <td class="text-center">
                         <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-secondary px-2" onclick="updateQty(${item.productId}, -1)">-</button>
-                            <span class="btn btn-light disabled fw-bold px-2">${item.quantity}</span>
-                            <button type="button" class="btn btn-outline-secondary px-2" onclick="updateQty(${item.productId}, 1)">+</button>
+                            <button type="button" class="btn btn-outline-secondary px-2 py-0" onclick="updateQty(${item.productId}, -1)">-</button>
+                            <span class="btn btn-light disabled fw-bold px-2 py-0 text-dark">${item.quantity}</span>
+                            <button type="button" class="btn btn-outline-secondary px-2 py-0" onclick="updateQty(${item.productId}, 1)">+</button>
                         </div>
                     </td>
-                    <td class="text-end small">${item.price.toFixed(0)}</td>
-                    <td class="text-end fw-bold small">${lineTotal}</td>
-                    <td class="text-end">
-                        <button type="button" class="btn btn-sm text-danger p-0" onclick="removeItem(${item.productId})"><i class="bi bi-x-circle"></i></button>
+                    <td class="text-end small text-muted">${item.price.toFixed(0)}</td>
+                    <td class="text-end fw-bold small">Rs. ${lineTotal}</td>
+                    <td class="text-end pe-2">
+                        <button type="button" class="btn btn-sm text-danger p-0" onclick="removeItem(${item.productId})"><i class="bi bi-x-circle-fill"></i></button>
                     </td>
                 </tr>
             `);
@@ -302,10 +371,10 @@
         const taxPct = Math.max(0, parseFloat($('#taxPctInput').val()) || 0);
         const taxable = subTotal - discount;
         const taxAmt = Math.round(taxable * (taxPct / 100) * 100) / 100;
-        const grandTotal = Math.round((taxable + taxAmt) * 100) / 100;
+        currentGrandTotal = Math.round((taxable + taxAmt) * 100) / 100;
 
         $('#subTotalDisplay').val(subTotal.toFixed(2));
-        $('#grandTotalDisplay').text('Rs. ' + grandTotal.toFixed(2));
+        $('#grandTotalDisplay').text('Rs. ' + currentGrandTotal.toFixed(2));
 
         const payMethod = parseInt($('#paymentMethod').val());
         let received = 0;
@@ -317,20 +386,14 @@
             received = parseFloat($('#receivedAmount').val()) || 0;
         }
 
-        const change = Math.max(0, received - grandTotal);
+        const change = Math.max(0, received - currentGrandTotal);
         $('#changeDisplay').val(change.toFixed(2));
-    }
-
-    function toggleOrderTypeFields() {
-        const type = parseInt($('#orderType').val());
-        $('#tableSelectWrap').toggleClass('d-none', type !== 1);
-        $('#deliveryPhoneWrap, #deliveryAddrWrap').toggleClass('d-none', type !== 3);
     }
 
     function toggleSplitPayment() {
         const payMethod = parseInt($('#paymentMethod').val());
         $('#splitPaymentBox').toggleClass('d-none', payMethod !== 4);
-        $('#singleReceivedWrap').toggleClass('d-none', payMethod === 4);
+        $('#singleReceivedWrap, #quickCashRow').toggleClass('d-none', payMethod === 4);
         recalcTotals();
     }
 
@@ -392,8 +455,8 @@
 
     // Category & Search Filtering
     $('.cat-filter').on('click', function() {
-        $('.cat-filter').removeClass('active btn-dark').addClass('btn-outline-dark');
-        $(this).removeClass('btn-outline-dark').addClass('active btn-dark');
+        $('.cat-filter').removeClass('active btn-dark').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('active btn-dark');
         const catId = parseInt($(this).data('cat'));
         $('.product-tile').each(function() {
             const match = catId === 0 || parseInt($(this).data('cat')) === catId;
