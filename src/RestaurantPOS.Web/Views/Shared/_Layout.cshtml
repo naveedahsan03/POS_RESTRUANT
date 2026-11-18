@@ -12,7 +12,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SpiceNight Restaurant POS</title>
+    <title>@ViewData["Title"] - FRIES STORY POS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
     <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
@@ -25,7 +25,7 @@
                 <a class="pos-brand-logo me-3" asp-controller="Home" asp-action="Index">
                     <span class="pos-brand-icon"><i class="bi bi-fire"></i></span>
                     <div>
-                        <div class="lh-1">SpiceNight</div>
+                        <div class="lh-1">FRIES STORY</div>
                         <small class="text-white-50 fw-normal" style="font-size: 0.68rem;">POS & Restaurant ERP</small>
                     </div>
                 </a>
@@ -54,11 +54,6 @@
                         <li class="nav-item">
                             <a class="nav-link @(currentCtrl == "SalesReturns" ? "active-nav" : "")" asp-controller="SalesReturns" asp-action="Index">
                                 <i class="bi bi-arrow-return-left"></i>Returns
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(currentCtrl == "CashRegister" ? "active-nav" : "")" asp-controller="CashRegister" asp-action="Index">
-                                <i class="bi bi-safe2"></i>Cash Drawer
                             </a>
                         </li>
                         @if (isAdmin)

@@ -21,9 +21,6 @@
             <a asp-controller="Pos" asp-action="Index" class="btn btn-warning px-4 py-2 fw-bold shadow">
                 <i class="bi bi-display me-2"></i>Open POS Screen
             </a>
-            <a asp-controller="CashRegister" asp-action="Index" class="btn btn-outline-light px-3 py-2">
-                <i class="bi bi-safe2 me-1"></i>Cash Drawer
-            </a>
             @if (User.IsInRole("Admin"))
             {
                 <a asp-controller="Reports" asp-action="DailyReport" class="btn btn-info text-dark fw-bold px-3 py-2">

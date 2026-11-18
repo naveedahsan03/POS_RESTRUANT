@@ -96,14 +96,11 @@ public class PosSaleService : IPosSaleService
             {
                 var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == item.ProductId && p.IsActive)
                     ?? throw new InvalidOperationException($"Product ID {item.ProductId} is inactive or does not exist.");
-
-                // Rule 7: Do not allow negative stock unless Admin explicitly enables it
-                if (!request.IsHoldOrder && product.CurrentStock < item.Quantity && !product.AllowNegativeStock && !isAdmin)
-                {
-                    throw new InvalidOperationException(
-                        $"Insufficient stock for '{product.Name}'. Available: {product.CurrentStock:N2} {product.Unit}, Requested: {item.Quantity:N2}.");
-                }
-
+                //if (!request.IsHoldOrder && product.CurrentStock < item.Quantity && !product.AllowNegativeStock && !isAdmin)
+                //{
+                //    throw new InvalidOperationException(
+                //        $"Insufficient stock for '{product.Name}'. Available: {product.CurrentStock:N2} {product.Unit}, Requested: {item.Quantity:N2}.");
+                //}
                 var grossLine = Math.Round(product.SalePrice * item.Quantity, 2);
                 var lineDiscount = Math.Clamp(item.DiscountAmount, 0m, grossLine);
                 var netLine = grossLine - lineDiscount;
