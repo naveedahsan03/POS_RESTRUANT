@@ -26,14 +26,21 @@
                                 <button class="btn btn-warning dropdown-toggle fw-bold shadow-sm" data-bs-toggle="dropdown">
                                     <i class="bi bi-pause-circle-fill me-1"></i>Held Orders (@heldOrders.Count)
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" style="min-width: 280px;">
                                     @foreach (var h in heldOrders)
                                     {
-                                        <li>
-                                            <a class="dropdown-item py-2 small" asp-action="Index" asp-route-resumeSaleId="@h.Id">
-                                                <div class="fw-bold text-dark">@h.InvoiceNumber — Rs. @h.TotalAmount.ToString("N0")</div>
-                                                <div class="text-muted">@h.OrderType @(h.RestaurantTable != null ? $"• Table {h.RestaurantTable.TableNumber}" : "")</div>
-                                            </a>
+                                        <li class="px-2 py-1">
+                                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                                <a class="dropdown-item py-1 px-2 rounded flex-grow-1 small" asp-action="Index" asp-route-resumeSaleId="@h.Id">
+                                                    <div class="fw-bold text-dark">@h.InvoiceNumber — Rs. @h.TotalAmount.ToString("N0")</div>
+                                                    <div class="text-muted">
+                                                        @h.OrderType @(h.RestaurantTable != null ? $"• Table {h.RestaurantTable.TableNumber}" : "") • @h.CustomerName (@h.SaleDetails.Count items)
+                                                    </div>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" title="Cancel Held Order" onclick="cancelHeldOrder(@h.Id, '@h.InvoiceNumber')">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
                                         </li>
                                     }
                                 </ul>
@@ -100,6 +107,16 @@
     <div class="col-lg-5">
         <div class="card h-100">
             <div class="card-header bg-white py-2">
+                @if (resumedOrder != null)
+                {
+                    <div class="alert alert-warning py-1 px-2 mb-2 d-flex justify-content-between align-items-center small">
+                        <div>
+                            <i class="bi bi-pause-circle-fill me-1"></i>
+                            <strong>Resumed Held Order:</strong> @resumedOrder.InvoiceNumber
+                        </div>
+                        <a asp-action="Index" class="btn btn-sm btn-outline-dark py-0 px-2" style="font-size: 0.75rem;">New Order</a>
+                    </div>
+                }
                 <!-- Interactive Order Type Buttons -->
                 <input type="hidden" id="orderType" value="1" />
                 <div class="btn-group w-100 order-type-selector mb-2" role="group">
@@ -265,6 +282,13 @@
         ];
         $(function() {
             selectOrderType(@((int)resumedOrder.OrderType));
+            @if (resumedOrder.RestaurantTableId.HasValue)
+            {
+                @:$('#restaurantTableId').val('@resumedOrder.RestaurantTableId.Value');
+            }
+            $('#customerName').val('@Html.Raw((resumedOrder.CustomerName ?? "Walk-In Customer").Replace("'", "\\'"))');
+            $('#customerPhone').val('@Html.Raw((resumedOrder.CustomerPhone ?? "").Replace("'", "\\'"))');
+            $('#deliveryAddress').val('@Html.Raw((resumedOrder.DeliveryAddress ?? "").Replace("'", "\\'"))');
             $('#discountInput').val('@resumedOrder.DiscountAmount');
             $('#taxPctInput').val('@resumedOrder.TaxPercentage');
             renderCart();
@@ -395,6 +419,20 @@
         $('#splitPaymentBox').toggleClass('d-none', payMethod !== 4);
         $('#singleReceivedWrap, #quickCashRow').toggleClass('d-none', payMethod === 4);
         recalcTotals();
+    }
+
+    function cancelHeldOrder(saleId, invoiceNo) {
+        if (!confirm(`Cancel held order ${invoiceNo}?`)) return;
+        $.ajax({
+            url: '@Url.Action("CancelHeldOrder", "Pos")?id=' + saleId,
+            type: 'POST',
+            success: function() {
+                window.location.href = '@Url.Action("Index", "Pos")';
+            },
+            error: function(xhr) {
+                alert(xhr.responseJSON?.message || 'Error cancelling held order.');
+            }
+        });
     }
 
     function submitPosOrder(isHold) {

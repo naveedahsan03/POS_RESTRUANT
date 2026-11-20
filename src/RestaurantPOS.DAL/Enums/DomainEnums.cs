@@ -21,7 +21,8 @@ public enum PaymentMethodType
     Cash = 1,
     Card = 2,
     Online = 3,
-    Split = 4
+    Split = 4,
+    NoRefund = 5
 }
 
 public enum PaymentStatus

@@ -29,7 +29,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromHours(14); // Covers full 6 PM - 4 AM restaurant shift
+    options.ExpireTimeSpan = TimeSpan.FromHours(18); // 18-hour session timeout
     options.SlidingExpiration = true;
 });
 

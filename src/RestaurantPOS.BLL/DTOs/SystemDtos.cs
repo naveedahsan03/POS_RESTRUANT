@@ -80,6 +80,7 @@ public class SaleReceiptDto
     public DateTime BusinessDate { get; set; }
     public DateTime SaleDateTime { get; set; }
     public OrderType OrderType { get; set; }
+    public int? RestaurantTableId { get; set; }
     public string? TableNumber { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerPhone { get; set; }

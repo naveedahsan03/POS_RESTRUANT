@@ -47,7 +47,9 @@ public class SalesReturnsController : Controller
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
             var result = await _salesReturnService.CreateSalesReturnAsync(request, userId);
-            TempData["Success"] = $"Sales Return {result.ReturnNumber} processed (Refund: Rs. {result.TotalRefundAmount:N2}). Stock and Daily Reports updated.";
+            TempData["Success"] = result.RefundMethod == RestaurantPOS.DAL.Enums.PaymentMethodType.NoRefund
+                ? $"Sales Return {result.ReturnNumber} processed (No Refund — Stock Restored Only)."
+                : $"Sales Return {result.ReturnNumber} processed (Refund: Rs. {result.TotalRefundAmount:N2}). Stock and Daily Reports updated.";
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)

@@ -44,6 +44,7 @@ public class PosSaleService : IPosSaleService
             await _businessDayService.EnsureBusinessDayRecordAsync(businessDate, userId);
 
             Sale sale;
+            int? previousTableId = null;
             if (request.ResumedSaleId.HasValue && request.ResumedSaleId.Value > 0)
             {
                 sale = await _db.Sales
@@ -52,6 +53,7 @@ public class PosSaleService : IPosSaleService
                     .FirstOrDefaultAsync(s => s.Id == request.ResumedSaleId.Value && s.Status == SaleStatus.Held)
                     ?? throw new InvalidOperationException("Held order not found or already completed.");
 
+                previousTableId = sale.RestaurantTableId;
                 _db.SaleDetails.RemoveRange(sale.SaleDetails);
                 _db.SalePayments.RemoveRange(sale.SalePayments);
                 sale.UpdatedAt = nowPkt;
@@ -139,6 +141,17 @@ public class PosSaleService : IPosSaleService
             {
                 detail.SaleId = sale.Id;
                 _db.SaleDetails.Add(detail);
+            }
+
+            if (previousTableId.HasValue && previousTableId != sale.RestaurantTableId)
+            {
+                var otherHeldOnPrev = await _db.Sales.AnyAsync(s =>
+                    s.Id != sale.Id && s.Status == SaleStatus.Held && s.RestaurantTableId == previousTableId.Value);
+                if (!otherHeldOnPrev)
+                {
+                    var prevTable = await _db.RestaurantTables.FindAsync(previousTableId.Value);
+                    if (prevTable != null) prevTable.Status = TableStatus.Available;
+                }
             }
 
             if (request.IsHoldOrder)
@@ -288,6 +301,33 @@ public class PosSaleService : IPosSaleService
             .ToListAsync();
     }
 
+    public async Task CancelHeldOrderAsync(int saleId, string userId)
+    {
+        var sale = await _db.Sales.FirstOrDefaultAsync(s => s.Id == saleId && s.Status == SaleStatus.Held)
+            ?? throw new InvalidOperationException("Held order not found or already completed.");
+
+        var nowPkt = _businessDayService.GetNowPakistanTime();
+        sale.Status = SaleStatus.Cancelled;
+        sale.UpdatedAt = nowPkt;
+
+        if (sale.OrderType == OrderType.DineIn && sale.RestaurantTableId.HasValue)
+        {
+            var otherHeldOnTable = await _db.Sales.AnyAsync(s =>
+                s.Id != sale.Id && s.Status == SaleStatus.Held && s.RestaurantTableId == sale.RestaurantTableId.Value);
+            if (!otherHeldOnTable)
+            {
+                var table = await _db.RestaurantTables.FindAsync(sale.RestaurantTableId.Value);
+                if (table != null)
+                {
+                    table.Status = TableStatus.Available;
+                    table.UpdatedAt = nowPkt;
+                }
+            }
+        }
+
+        await _db.SaveChangesAsync();
+    }
+
     public async Task<SaleReceiptDto?> GetSaleReceiptAsync(int saleId)
     {
         var sale = await _db.Sales
@@ -333,6 +373,7 @@ public class PosSaleService : IPosSaleService
             BusinessDate = sale.BusinessDate,
             SaleDateTime = sale.SaleDateTime,
             OrderType = sale.OrderType,
+            RestaurantTableId = sale.RestaurantTableId,
             TableNumber = sale.RestaurantTable?.TableNumber,
             CustomerName = sale.CustomerName,
             CustomerPhone = sale.CustomerPhone,

@@ -63,6 +63,7 @@
                                     <option value="1">Cash Refund</option>
                                     <option value="2">Card Reversal</option>
                                     <option value="3">Online Refund</option>
+                                    <option value="5">No Refund (Stock Only)</option>
                                 </select>
                             </div>
                             <div class="col-md-8">
@@ -100,7 +101,16 @@
                                 <td>@r.OriginalInvoiceNumber</td>
                                 <td>@r.BusinessDate.ToString("dd MMM yyyy")</td>
                                 <td>@r.Reason</td>
-                                <td class="text-end fw-bold text-danger">Rs. @r.TotalRefundAmount.ToString("N2")</td>
+                                <td class="text-end fw-bold @(r.RefundMethod == PaymentMethodType.NoRefund ? "text-secondary" : "text-danger")">
+                                    @if (r.RefundMethod == PaymentMethodType.NoRefund)
+                                    {
+                                        <span class="badge bg-secondary">No Refund</span>
+                                    }
+                                    else
+                                    {
+                                        @:Rs. @r.TotalRefundAmount.ToString("N2")
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>

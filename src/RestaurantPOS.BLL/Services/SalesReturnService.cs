@@ -70,6 +70,7 @@ public class SalesReturnService : ISalesReturnService
             await _db.SaveChangesAsync();
 
             decimal totalRefundAmount = 0m;
+            var isNoRefund = request.RefundMethod == PaymentMethodType.NoRefund;
 
             foreach (var item in validItems)
             {
@@ -86,12 +87,14 @@ public class SalesReturnService : ISalesReturnService
                         $"Cannot return {item.ReturnQuantity:N2} of '{origDetail.ProductName}'. Sold: {origDetail.Quantity:N2}, Already Returned: {previouslyReturned:N2}, Max Returnable: {maxReturnable:N2}.");
                 }
 
-                // Calculate net unit price paid after line & proportional invoice discount
-                var effectiveUnitPrice = origDetail.Quantity > 0
-                    ? Math.Round(origDetail.LineTotal / origDetail.Quantity, 2)
-                    : origDetail.UnitPrice;
+                // Calculate net unit price paid after line & proportional invoice discount (0 if No Refund)
+                var effectiveUnitPrice = isNoRefund
+                    ? 0m
+                    : (origDetail.Quantity > 0
+                        ? Math.Round(origDetail.LineTotal / origDetail.Quantity, 2)
+                        : origDetail.UnitPrice);
 
-                var lineRefund = Math.Round(effectiveUnitPrice * item.ReturnQuantity, 2);
+                var lineRefund = isNoRefund ? 0m : Math.Round(effectiveUnitPrice * item.ReturnQuantity, 2);
                 totalRefundAmount += lineRefund;
 
                 _db.SalesReturnDetails.Add(new SalesReturnDetail
@@ -125,7 +128,9 @@ public class SalesReturnService : ISalesReturnService
                     QuantityOut = 0,
                     ClosingStock = closing,
                     UnitCost = origDetail.UnitCostSnapshot,
-                    Remarks = $"Sales Return against {sale.InvoiceNumber}: {salesReturn.Reason}",
+                    Remarks = isNoRefund
+                        ? $"Sales Return (No Refund) against {sale.InvoiceNumber}: {salesReturn.Reason}"
+                        : $"Sales Return against {sale.InvoiceNumber}: {salesReturn.Reason}",
                     CreatedByUserId = userId,
                     CreatedAt = nowPkt
                 });

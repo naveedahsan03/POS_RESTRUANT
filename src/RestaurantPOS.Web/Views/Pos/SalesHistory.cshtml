@@ -42,8 +42,15 @@
                             <span class="badge @(s.Status == SaleStatus.Completed ? "bg-success" : s.Status == SaleStatus.Held ? "bg-warning text-dark" : "bg-secondary")">@s.Status</span>
                         </td>
                         <td class="text-end">
-                            <a asp-action="Receipt" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> Receipt</a>
-                            <a asp-controller="SalesReturns" asp-action="Index" asp-route-invoiceNumber="@s.InvoiceNumber" class="btn btn-sm btn-outline-danger">Return</a>
+                            @if (s.Status == SaleStatus.Held)
+                            {
+                                <a asp-action="Index" asp-route-resumeSaleId="@s.Id" class="btn btn-sm btn-warning fw-semibold"><i class="bi bi-play-fill"></i> Resume</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Receipt" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> Receipt</a>
+                                <a asp-controller="SalesReturns" asp-action="Index" asp-route-invoiceNumber="@s.InvoiceNumber" class="btn btn-sm btn-outline-danger">Return</a>
+                            }
                         </td>
                     </tr>
                 }

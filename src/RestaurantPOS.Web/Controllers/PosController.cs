@@ -80,6 +80,21 @@ public class PosController : Controller
         }
     }
 
+    [HttpPost]
+    public async Task<IActionResult> CancelHeldOrder(int id)
+    {
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+            await _posSaleService.CancelHeldOrderAsync(id, userId);
+            return Ok(new { success = true, message = "Held order cancelled." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpGet]
     public async Task<IActionResult> Receipt(int id)
     {

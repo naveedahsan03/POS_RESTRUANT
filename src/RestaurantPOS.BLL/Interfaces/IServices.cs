@@ -30,6 +30,7 @@ public interface IPosSaleService
 {
     Task<SaleReceiptDto> CreateOrCompleteSaleAsync(CreateSaleRequestDto request, string userId, bool isAdmin);
     Task<List<Sale>> GetHeldOrdersAsync();
+    Task CancelHeldOrderAsync(int saleId, string userId);
     Task<SaleReceiptDto?> GetSaleReceiptAsync(int saleId);
     Task<SaleReceiptDto?> GetSaleByInvoiceNumberAsync(string invoiceNumber);
     Task<List<Sale>> GetRecentSalesAsync(DateTime? businessDate = null, int count = 50);
