@@ -1,22 +1,117 @@
 @model SaleReceiptDto
 @{
-    ViewData["Title"] = $"Receipt {Model.InvoiceNumber}";
+    var isHeld = Model.Status == SaleStatus.Held;
+    ViewData["Title"] = isHeld ? $"Hold Slip {Model.InvoiceNumber}" : $"Receipt {Model.InvoiceNumber}";
+    var autoPrint = Context.Request.Query["autoPrint"] == "true";
 }
+
+<style>
+    .receipt-slip,
+    .receipt-slip * {
+        font-family: 'Courier New', Courier, monospace !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
+    }
+
+    .receipt-slip {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .receipt-slip .receipt-title {
+        font-size: 20px !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.5px;
+    }
+
+    .receipt-slip .hold-banner {
+        border: 2px solid #000000;
+        padding: 4px 6px;
+        margin: 6px 0;
+        font-size: 15px !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.5px;
+    }
+
+    .receipt-slip .receipt-divider-bottom {
+        border-bottom: 2px dashed #000000 !important;
+    }
+
+    .receipt-slip .receipt-divider-top {
+        border-top: 2px dashed #000000 !important;
+    }
+
+    .receipt-slip .receipt-grand-total {
+        font-size: 16px !important;
+        font-weight: 900 !important;
+        border-top: 2px solid #000000 !important;
+        border-bottom: 2px solid #000000 !important;
+    }
+
+    .receipt-slip table th,
+    .receipt-slip table td {
+        color: #000000 !important;
+        font-weight: 700 !important;
+        padding: 3px 2px !important;
+    }
+
+    @@media print {
+        @@page {
+            margin: 2mm;
+        }
+        body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        main.container-fluid {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .receipt-wrapper {
+            width: 100% !important;
+            max-width: 80mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+        }
+        .receipt-card {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 2px !important;
+        }
+        .receipt-slip,
+        .receipt-slip * {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
 <div class="row justify-content-center">
-    <div class="col-md-5 col-lg-4">
-        <div class="card p-3" style="font-family: 'Courier New', Courier, monospace;">
-            <div class="text-center border-bottom pb-2 mb-2">
-                <h5 class="fw-bold mb-0">FRIES STORY</h5>
-                <div class="small">Main Food Street, Karachi</div>
-                <div class="small">Invoice: <strong>@Model.InvoiceNumber</strong></div>
-                <div class="small">Business Date: <strong>@Model.BusinessDate.ToString("dd-MMM-yyyy")</strong></div>
-                <div class="small">Date/Time: @Model.SaleDateTime.ToString("dd-MMM-yyyy hh:mm:ss tt")</div>
-                <div class="small">Type: <strong>@Model.OrderType</strong> @(Model.TableNumber != null ? $"| Table: {Model.TableNumber}" : "")</div>
-                <div class="small">Cashier: @Model.CashierName</div>
+    <div class="col-md-5 col-lg-4 receipt-wrapper">
+        <div class="card p-3 receipt-card receipt-slip">
+            <div class="text-center receipt-divider-bottom pb-2 mb-2">
+                <div class="receipt-title mb-0">FRIES STORY</div>
+                <div>Main Food Street, Karachi</div>
+                @if (isHeld)
+                {
+                    <div class="hold-banner">*** HOLD ORDER SLIP ***</div>
+                }
+                <div>Invoice: @Model.InvoiceNumber</div>
+                <div>Business Date: @Model.BusinessDate.ToString("dd-MMM-yyyy")</div>
+                <div>Date/Time: @Model.SaleDateTime.ToString("dd-MMM-yyyy hh:mm:ss tt")</div>
+                <div>Type: @Model.OrderType @(Model.TableNumber != null ? $"| Table: {Model.TableNumber}" : "")</div>
+                @if (!string.IsNullOrWhiteSpace(Model.CustomerName))
+                {
+                    <div>Customer: @Model.CustomerName @(!string.IsNullOrWhiteSpace(Model.CustomerPhone) ? $"({Model.CustomerPhone})" : "")</div>
+                }
+                <div>Cashier: @Model.CashierName</div>
             </div>
 
-            <table class="table table-sm table-borderless small mb-2">
-                <thead class="border-bottom">
+            <table class="table table-sm table-borderless mb-2">
+                <thead class="receipt-divider-bottom">
                     <tr>
                         <th>Item</th>
                         <th class="text-center">Qty</th>
@@ -37,7 +132,7 @@
                 </tbody>
             </table>
 
-            <div class="border-top pt-2 small">
+            <div class="receipt-divider-top pt-2">
                 <div class="d-flex justify-content-between">
                     <span>Subtotal:</span>
                     <span>Rs. @Model.SubTotal.ToString("N2")</span>
@@ -56,34 +151,54 @@
                         <span>Rs. @Model.TaxAmount.ToString("N2")</span>
                     </div>
                 }
-                <div class="d-flex justify-content-between fw-bold fs-6 border-top border-bottom py-1 my-1">
+                <div class="d-flex justify-content-between receipt-grand-total py-1 my-1">
                     <span>GRAND TOTAL:</span>
                     <span>Rs. @Model.TotalAmount.ToString("N2")</span>
                 </div>
-                <div class="d-flex justify-content-between">
-                    <span>Payment Method:</span>
-                    <span>@Model.PaymentMethod</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span>Received:</span>
-                    <span>Rs. @Model.ReceivedAmount.ToString("N2")</span>
-                </div>
-                <div class="d-flex justify-content-between fw-bold">
-                    <span>Change Return:</span>
-                    <span>Rs. @Model.ChangeAmount.ToString("N2")</span>
-                </div>
+                @if (isHeld)
+                {
+                    <div class="text-center py-1">
+                        STATUS: ON HOLD (UNPAID)
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex justify-content-between">
+                        <span>Payment Method:</span>
+                        <span>@Model.PaymentMethod</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Received:</span>
+                        <span>Rs. @Model.ReceivedAmount.ToString("N2")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Change Return:</span>
+                        <span>Rs. @Model.ChangeAmount.ToString("N2")</span>
+                    </div>
+                }
             </div>
 
-            <div class="text-center small mt-3 pt-2 border-top">
-                Thank you for dining with us!
+            <div class="text-center mt-3 pt-2 receipt-divider-top">
+                @(isHeld ? "Please keep this slip for your order!" : "Thank you for dining with us!")
             </div>
 
             <div class="d-flex gap-2 mt-3 no-print">
                 <button type="button" class="btn btn-primary w-100" onclick="window.print()">
-                    <i class="bi bi-printer me-1"></i>Print Receipt
+                    <i class="bi bi-printer me-1"></i>@(isHeld ? "Print Hold Slip" : "Print Receipt")
                 </button>
-                <a asp-action="Index" class="btn btn-warning w-100 fw-bold">New Sale</a>
+                <a asp-action="Index" class="btn btn-warning w-100 fw-bold">@(isHeld ? "Back to POS" : "New Sale")</a>
             </div>
         </div>
     </div>
 </div>
+
+@if (autoPrint)
+{
+    @section Scripts {
+        <script>
+            window.addEventListener('load', function () {
+                window.print();
+            });
+        </script>
+    }
+}

@@ -37,8 +37,11 @@
                                                         @h.OrderType @(h.RestaurantTable != null ? $"• Table {h.RestaurantTable.TableNumber}" : "") • @h.CustomerName (@h.SaleDetails.Count items)
                                                     </div>
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" title="Cancel Held Order" onclick="cancelHeldOrder(@h.Id, '@h.InvoiceNumber')">
-                                                    <i class="bi bi-x-lg"></i>
+                                                <a asp-action="Receipt" asp-route-id="@h.Id" asp-route-autoPrint="true" class="btn btn-sm btn-outline-primary py-1 px-2" title="Print Hold Slip">
+                                                    <i class="bi bi-printer"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Held Order" onclick="event.stopPropagation(); cancelHeldOrder(@h.Id, '@h.InvoiceNumber')">
+                                                    <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
                                         </li>
@@ -422,7 +425,7 @@
     }
 
     function cancelHeldOrder(saleId, invoiceNo) {
-        if (!confirm(`Cancel held order ${invoiceNo}?`)) return;
+        if (!confirm(`Delete held order ${invoiceNo}?`)) return;
         $.ajax({
             url: '@Url.Action("CancelHeldOrder", "Pos")?id=' + saleId,
             type: 'POST',
@@ -430,7 +433,7 @@
                 window.location.href = '@Url.Action("Index", "Pos")';
             },
             error: function(xhr) {
-                alert(xhr.responseJSON?.message || 'Error cancelling held order.');
+                alert(xhr.responseJSON?.message || 'Error deleting held order.');
             }
         });
     }
@@ -477,11 +480,7 @@
             contentType: 'application/json',
             data: JSON.stringify(payload),
             success: function(res) {
-                if (res.isHeld) {
-                    window.location.href = '@Url.Action("Index", "Pos")';
-                } else {
-                    window.location.href = res.receiptUrl;
-                }
+                window.location.href = res.receiptUrl;
             },
             error: function(xhr) {
                 $('#btnCompletePrint, #btnHoldOrder').prop('disabled', false);

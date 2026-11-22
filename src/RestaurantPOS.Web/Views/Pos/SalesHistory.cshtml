@@ -45,6 +45,8 @@
                             @if (s.Status == SaleStatus.Held)
                             {
                                 <a asp-action="Index" asp-route-resumeSaleId="@s.Id" class="btn btn-sm btn-warning fw-semibold"><i class="bi bi-play-fill"></i> Resume</a>
+                                <a asp-action="Receipt" asp-route-id="@s.Id" asp-route-autoPrint="true" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> Print</a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteHeldOrder(@s.Id, '@s.InvoiceNumber')"><i class="bi bi-trash"></i> Delete</button>
                             }
                             else
                             {
@@ -58,3 +60,21 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    function deleteHeldOrder(saleId, invoiceNo) {
+        if (!confirm(`Delete held order ${invoiceNo}?`)) return;
+        $.ajax({
+            url: '@Url.Action("CancelHeldOrder", "Pos")?id=' + saleId,
+            type: 'POST',
+            success: function() {
+                window.location.reload();
+            },
+            error: function(xhr) {
+                alert(xhr.responseJSON?.message || 'Error deleting held order.');
+            }
+        });
+    }
+</script>
+}
