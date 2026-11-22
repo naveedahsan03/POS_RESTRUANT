@@ -86,9 +86,9 @@
                                 <div>
                                     <div class="d-flex justify-content-between align-items-start mb-1">
                                         <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">@p.CategoryName</span>
-                                        <span class="badge @(p.IsLowStock ? "bg-danger-subtle text-danger" : "bg-success-subtle text-success")" style="font-size: 0.65rem;">
+                                       @*  <span class="badge @(p.IsLowStock ? "bg-danger-subtle text-danger" : "bg-success-subtle text-success")" style="font-size: 0.65rem;">
                                             @p.CurrentStock.ToString("N0") @p.Unit
-                                        </span>
+                                        </span> *@
                                     </div>
                                     <div class="fw-bold text-dark small lh-sm mt-1">@p.Name</div>
                                 </div>
