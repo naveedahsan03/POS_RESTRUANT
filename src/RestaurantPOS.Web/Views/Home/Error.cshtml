@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white fw-bold">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Application Error (500)
+            </div>
+            <div class="card-body">
+                <p class="mb-2">An error occurred while processing your request.</p>
+                @if (!string.IsNullOrWhiteSpace(ViewBag.ErrorPath as string))
+                {
+                    <div class="small text-muted mb-2"><strong>Path:</strong> @ViewBag.ErrorPath</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(ViewBag.ErrorMessage as string))
+                {
+                    <div class="alert alert-danger small mb-2">
+                        <strong>Error:</strong> @ViewBag.ErrorMessage
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(ViewBag.InnerErrorMessage as string))
+                {
+                    <div class="alert alert-warning small mb-3">
+                        <strong>Details:</strong> @ViewBag.InnerErrorMessage
+                    </div>
+                }
+                <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-sm">Back to Login</a>
+            </div>
+        </div>
+    </div>
+</div>

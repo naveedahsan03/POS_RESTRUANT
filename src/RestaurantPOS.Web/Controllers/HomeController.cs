@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantPOS.BLL.Interfaces;
 
@@ -27,5 +28,12 @@ public class HomeController : Controller
     }
 
     [AllowAnonymous]
-    public IActionResult Error() => View();
+    public IActionResult Error()
+    {
+        var feature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+        ViewBag.ErrorPath = feature?.Path;
+        ViewBag.ErrorMessage = feature?.Error?.Message;
+        ViewBag.InnerErrorMessage = feature?.Error?.InnerException?.Message;
+        return View();
+    }
 }
